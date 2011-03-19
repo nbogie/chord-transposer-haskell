@@ -1,0 +1,23 @@
+Build-type:     Simple
+Name:           chord-sheet-transposer
+Version:        0.0.2
+Synopsis:       Chord Sheet Transposer
+Description:    Parses and modifies informal lyric + chord sheets allowing transposition and analysis.
+Category:       Music
+License:        MIT
+License-file:   docs/LICENSE
+Author:         <neillbogie+software@gmail.com>
+Maintainer:     <neillbogie+software@gmail.com>
+Copyright:      Neill Bogie 2011
+Stability:      experimental
+Tested-with:    GHC ==6.12
+Cabal-Version:  >= 1.4
+Executable:     chord-sheet-transposer
+Main-Is:        Main.hs
+Build-depends:
+    base == 4.2.0.0
+  , containers == 0.3.0.0
+  , parsec == 3.1.1
+  , bytestring == 0.9.1.7
+  , cmdargs == 0.6.*
+GHC-Options:    -O2
