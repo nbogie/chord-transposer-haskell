@@ -1,6 +1,9 @@
+module ChordParser where
+
 import Text.ParserCombinators.Parsec
 import Control.Monad
 import Data.Either (rights, lefts)
+import Data.Maybe (fromMaybe)
 
 data Note = AFlat | A | ASharp | BFlat |  B | C | CSharp | DFlat |  D | DSharp 
                   | EFlat |  E | F | FSharp | GFlat |  G | GSharp deriving (Eq, Show, Ord)
@@ -8,13 +11,40 @@ data ChordColor = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Sh
 data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cColor::ChordColor, 
                     cDecorations ::[String] } deriving (Eq, Show, Ord)
 
+chordToSym :: Chord -> String
+chordToSym Chord{bassNote = bn, rootNote = rn} = 
+  let sbn = case bn of
+              Just n -> '/':noteToSym n
+              Nothing -> ""
+  in noteToSym rn ++ sbn
+
+noteToSym :: Note -> String
+noteToSym AFlat = "Ab"
+noteToSym A = "A"
+noteToSym ASharp = "A#"
+noteToSym B = "B"
+noteToSym BFlat = "Bb"
+noteToSym C = "C"
+noteToSym CSharp = "C#"
+noteToSym D = "D"
+noteToSym DSharp = "D#"
+noteToSym DFlat = "Db"
+noteToSym E = "E"
+noteToSym EFlat = "Eb"
+noteToSym F = "F"
+noteToSym FSharp = "F#"
+noteToSym G = "G"
+noteToSym GSharp = "G#"
+noteToSym GFlat = "Gb"
+
+
 -- This could be useful as the core of a service which could take any ascii sheet music and change key
 -- or re-write relative to the root, using roman numerals (to analyze progressions more purely).
 -- it could find and add guitar chord symbols, or make midi of the piano part, etc (but it doesn't know timing)
 -- must be able to support chords it doesn't understand (strange notations, human mistakes)
 -- We want to preserve position in the chord sheet so we can do substitutions (and extra annotations) in place
-main :: IO ()
-main    = parseAndPrint (unwords sampleInputs)
+-- main :: IO ()
+-- main    = parseAndPrint (unwords sampleInputs)
 main2    = interact parseAndShow
 
 parseAndPrint :: String -> IO ()
@@ -29,6 +59,11 @@ parseAndShow input = do
        let ls = lines input
        let eitherChords = map (parse pChordLines "foo") ls
        show eitherChords
+
+parseStringToChord :: String -> Either String Chord
+parseStringToChord xs = case parse pChord ("Input: "++xs) xs of
+                          Left err -> Left $ show err
+                          Right c -> Right c
 
 -- can't get this to terminate correctly - eof is always unexpected
 pChordLines :: Parser [[Chord]]
