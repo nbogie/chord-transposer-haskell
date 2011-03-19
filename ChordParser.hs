@@ -12,12 +12,19 @@ data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cColor::ChordColor,
                     cDecorations ::[String] } deriving (Eq, Show, Ord)
 
 chordToSym :: Chord -> String
-chordToSym Chord{bassNote = bn, rootNote = rn} = 
+chordToSym Chord{bassNote = bn, rootNote = rn, cColor = c} = 
   let sbn = case bn of
               Just n -> '/':noteToSym n
               Nothing -> ""
-  in noteToSym rn ++ sbn
+  in noteToSym rn ++ colorToSym c ++ sbn
 
+colorToSym :: ChordColor -> String
+colorToSym CCMajor = ""
+colorToSym CCMinor = "m"
+colorToSym CCDiminished = "dim"
+colorToSym CCAugmented = "aug"
+
+                 
 noteToSym :: Note -> String
 noteToSym AFlat = "Ab"
 noteToSym A = "A"
