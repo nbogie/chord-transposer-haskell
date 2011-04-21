@@ -11,7 +11,7 @@ Maintainer:     <neillbogie+software@gmail.com>
 Copyright:      Neill Bogie 2011
 Stability:      experimental
 Tested-with:    GHC ==6.12
-Cabal-Version:  >= 1.4
+Cabal-Version:  >= 1.6
 Executable:     chord-sheet-transposer
 Main-Is:        Main.hs
 Build-depends:
