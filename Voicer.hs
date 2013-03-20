@@ -1,4 +1,4 @@
-module Player where
+module Voicer where
 import ChordParser
 import LineSplitter
 import Notes
