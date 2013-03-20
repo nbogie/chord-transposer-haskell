@@ -10,6 +10,7 @@ import Notes
 main :: IO ()
 main = transposeStdin 3
 
+
 transposeStdin :: Transposition -> IO () 
 transposeStdin amt = 
     interact $ printChordSheet . transposeChordSheet amt . parseChordSheet
@@ -17,6 +18,8 @@ transposeStdin amt =
 transposeChordSheetStr :: Transposition -> String -> String
 transposeChordSheetStr amt = 
     printChordSheet . transposeChordSheet amt . parseChordSheet
+
+type Transposition = Int
 
 type ChordSheetItem = (Either String Chord, (String, Int))
 
@@ -34,7 +37,6 @@ parseChordSheetLine line = ChordSheetLine (map buildItem posns) line
     buildItem x = (parseStringToChord (fst x), x)
     posns = findWordPositions line
 
-type Transposition = Int
 
 transposeChordSheet :: Transposition -> ChordSheet -> ChordSheet
 transposeChordSheet trans cs = cs{csLines = map (transposeChordSheetLine trans) (csLines cs)}
