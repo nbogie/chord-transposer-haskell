@@ -1,48 +1,8 @@
 module ChordParser where
 
 import Text.ParserCombinators.Parsec
-import Control.Monad
-import Data.Either (rights, lefts)
-import Data.Maybe (fromMaybe)
+import Notes
 
-data Note = AFlat | A | ASharp | BFlat |  B | C | CSharp | DFlat |  D | DSharp 
-                  | EFlat |  E | F | FSharp | GFlat |  G | GSharp deriving (Eq, Show, Ord)
-data ChordColor = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
-data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cColor::ChordColor, 
-                    cDecorations ::[String] } deriving (Eq, Show, Ord)
-
-chordToSym :: Chord -> String
-chordToSym Chord{bassNote = bn, rootNote = rn, cColor = c} = 
-  let sbn = case bn of
-              Just n -> '/':noteToSym n
-              Nothing -> ""
-  in noteToSym rn ++ colorToSym c ++ sbn
-
-colorToSym :: ChordColor -> String
-colorToSym CCMajor = ""
-colorToSym CCMinor = "m"
-colorToSym CCDiminished = "dim"
-colorToSym CCAugmented = "aug"
-
-                 
-noteToSym :: Note -> String
-noteToSym AFlat = "Ab"
-noteToSym A = "A"
-noteToSym ASharp = "A#"
-noteToSym B = "B"
-noteToSym BFlat = "Bb"
-noteToSym C = "C"
-noteToSym CSharp = "C#"
-noteToSym D = "D"
-noteToSym DSharp = "D#"
-noteToSym DFlat = "Db"
-noteToSym E = "E"
-noteToSym EFlat = "Eb"
-noteToSym F = "F"
-noteToSym FSharp = "F#"
-noteToSym G = "G"
-noteToSym GSharp = "G#"
-noteToSym GFlat = "Gb"
 
 
 -- This could be useful as the core of a service which could take any ascii sheet music and change key
@@ -52,6 +12,7 @@ noteToSym GFlat = "Gb"
 -- We want to preserve position in the chord sheet so we can do substitutions (and extra annotations) in place
 -- main :: IO ()
 -- main    = parseAndPrint (unwords sampleInputs)
+main2 :: IO ()
 main2    = interact parseAndShow
 
 parseAndPrint :: String -> IO ()
@@ -143,6 +104,7 @@ pNote = do
     "Gb" -> GFlat
     "G" -> G
     "G#" -> GSharp
+    other -> error $ "BUG: unrecognised reformed note " ++ other
 
 -- m (not followed by an a for "maj") (peeking - don't consume)
 -- or "dim"

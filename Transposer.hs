@@ -2,14 +2,21 @@
 module Transposer where
 import Data.Either (lefts, rights)
 import Data.List (foldl')
-import Player
+-- import Player
 import ChordParser
 import LineSplitter
+import Notes
 
+main :: IO ()
 main = transposeStdin 3
 
+transposeStdin :: Transposition -> IO () 
 transposeStdin amt = 
-    interact (printChordSheet . (transposeChordSheet amt). parseChordSheet)
+    interact $ printChordSheet . transposeChordSheet amt . parseChordSheet
+
+transposeChordSheetStr :: Transposition -> String -> String
+transposeChordSheetStr amt = 
+    printChordSheet . transposeChordSheet amt . parseChordSheet
 
 type ChordSheetItem = (Either String Chord, (String, Int))
 
@@ -41,7 +48,7 @@ transposeChordSheetItem trans (Right c, z) = (Right c{rootNote = upSemitones (ro
  where newBassNote = case bassNote c of
                         Just b -> Just (upSemitones b trans)
                         Nothing -> Nothing
-transposeChordSheetItem trans (Left e, z)  = (Left e, z)
+transposeChordSheetItem _trans (Left e, z)  = (Left e, z)
 
 printChordSheet :: ChordSheet -> String
 printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
@@ -58,8 +65,8 @@ printToPositions items = posPrint $ map f items
         f (Right c, (_, pos))   = (chordToSym c, pos)
 
 posPrint :: [(String, Int)] -> String
-posPrint is = foldl' f "" is
-  where f acc (word, pos) = acc ++ take padLen (repeat ' ') ++ word
+posPrint = foldl' f ""
+  where f acc (word, pos) = acc ++ replicate padLen ' ' ++ word
           where 
              padLen = max 1 (pos - length acc)
 

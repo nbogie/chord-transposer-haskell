@@ -2,11 +2,12 @@
 module Main where
 import Transposer hiding (main)
 
-import System.Console.CmdArgs (cmdArgs, cmdArgsMode, cmdArgsRun, (&=), summary, help)
+import System.Console.CmdArgs (cmdArgsMode, cmdArgsRun, (&=), summary, help)
 -- provide reflection needed for cmdArgs
 import Data.Typeable
 import Data.Data
 
+main :: IO ()
 main = do opts <- cmdArgsRun optsConfig
           let t = transpose opts
           transposeStdin t
@@ -21,4 +22,5 @@ optsConfig = cmdArgsMode $ Prog {
     }
   &= summary ("Chord Sheet Transposer version "++ version)
 
+version :: String
 version = "0.0.1"
