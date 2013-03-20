@@ -15,8 +15,8 @@ Cabal-Version:  >= 1.6
 Executable:     chord-sheet-transposer
 Main-Is:        Main.hs
 Build-depends:
-    base == 4.2.0.0
-  , containers == 0.3.0.0
-  , parsec == 3.1.1
-  , bytestring == 0.9.1.7
-  , cmdargs == 0.6.*
+    base >= 4.2.0.0
+  , containers >= 0.4.2.0
+  , parsec >= 3.1.2
+  , bytestring >= 0.9.1.7
+  , cmdargs >= 0.6
