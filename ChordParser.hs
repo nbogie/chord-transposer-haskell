@@ -167,6 +167,7 @@ testData =
   , ("AM7"   , crd A      maj `with` ["M7"]     )
   , ("Gsus2" , crd G      maj `sus` 2           )
   , ("Gsus4" , crd G      maj `sus` 4           )
+  , ("G7sus4/D", crd G    maj `with` ["7"] `sus` 4 `on` D   )
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
   , ("C+"    , crd C      aug                   )
@@ -187,6 +188,6 @@ unsupportedTestData =
 -- conveniences for modifying a chord 
 -- normally these are used to further its specification.  Ideally reflect this in the types.
 with :: Chord -> [String] -> Chord
-with baseChord decorations = baseChord { cDecorations = decorations }
+with baseChord decorations = baseChord { cDecorations = cDecorations baseChord ++ decorations }
 on :: Chord -> Note -> Chord
 on   baseChord bNote       = baseChord { bassNote = Just bNote }
