@@ -1,2 +1,5 @@
 TODO: collect and summarise all chords encountered (e.g. show all guitar chords, or talk about the likely (or confirmed) key and their name and harmonic function within it).
 
+TODO: add support for C- where we only have Cm currently.
+I think when outputting the chords we have to preserve the notation type, so after transposing "C-", we need to say "D-" not "Dm".
+Note we don't really need min/maj/dim/aug parsed out of a string in order to transpose, though it is definitely helpful in key recognition and harmonic function.
