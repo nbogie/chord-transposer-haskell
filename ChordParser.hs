@@ -1,9 +1,12 @@
 module ChordParser where
 
-import Text.ParserCombinators.Parsec
-import Notes
-import Test.HUnit
 import Data.Either
+import Text.ParserCombinators.Parsec
+
+import Notes
+
+import Test.HUnit
+-- http://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide#Getting_Started
 
 
 -- This could be useful as the core of a service which could take any ascii sheet music and change key
@@ -15,7 +18,8 @@ main :: IO ()
 
 main    = do
   tests
-  parseAndPrint (unwords sampleInputs)
+  -- parseAndPrint (unwords sampleInputs)
+  return ()
 
 main2 :: IO ()
 main2    = interact parseAndShow
@@ -127,11 +131,15 @@ sampleInputs =
   ]
 
 
-tests = runTestTT $ TestList [ 4 ~=? 10 ]
+-- tests = runTestTT $ TestList [ 4 ~=? 10 ]
 {- 
-tests = runTestTT $ TestList $ map testIt testData
-  where testIt inp exp = exp ~=? either (error "no parse") id (parse pChord inp inp)
 -}
+tests = runTestTT $ TestList $ map testIt testData
+  where 
+    testIt :: (String, Chord) -> Test
+    testIt (inp, exp) = ("When input is " ++ inp) ~: 
+                           exp ~=? either (error "no parse") id (parse pChord inp inp)
+
 initChord :: Note -> ChordColor -> Chord
 initChord n color = Chord { rootNote = n, bassNote = Nothing, cColor = color, cDecorations = [] }
 
@@ -141,22 +149,7 @@ aug = CCAugmented
 dim = CCDiminished
 
 testData = 
-  [ ("A"     , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = []        })
-  , ("A#7-9" , Chord {rootNote = ASharp, bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["7","-9"]})
-  , ("Aaug"  , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCAugmented,  cDecorations = []        })
-  , ("A9"    , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["9"]     })
-  , ("Bbm7"  , Chord {rootNote = BFlat,  bassNote = Nothing,     cColor = CCMinor,      cDecorations = ["7"]     })
-  , ("Ab"    , Chord {rootNote = AFlat,  bassNote = Nothing,     cColor = CCMajor,      cDecorations = []        })
-  , ("F#dim" , Chord {rootNote = FSharp, bassNote = Nothing,     cColor = CCDiminished, cDecorations = []        })
-  , ("A/F#"  , Chord {rootNote = A,      bassNote = Just FSharp, cColor = CCMajor,      cDecorations = []        })
-  , ("Am"    , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMinor,      cDecorations = []        })
-  , ("Am7"   , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMinor,      cDecorations = ["7"]     })
-  , ("AM7"   , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["M7"]    })
-  , ("Gsus2" , Chord {rootNote = G,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["sus2"]  })
-  , ("Gsus4" , Chord {rootNote = G,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["sus4"]  })
-  , ("A#m7-5", Chord {rootNote = ASharp, bassNote = Nothing,     cColor = CCMinor,      cDecorations = ["7","-5"]})
-  , ("Am/C"  , Chord {rootNote = A,      bassNote = Just C,      cColor = CCMinor,      cDecorations = []        })
-  , ("A"     , crd A      maj                   )
+  [ ("A"     , crd A      maj                   )
   , ("A#7-9" , crd ASharp maj `with` ["7","-9"] )
   , ("Aaug"  , crd A      aug                   )
   , ("A9"    , crd A      maj `with` ["9"]      )
@@ -169,11 +162,13 @@ testData =
   , ("AM7"   , crd A      maj `with` ["M7"]     )
   , ("Gsus2" , crd G      maj `with` ["sus2"]   )
   , ("Gsus4" , crd G      maj `with` ["sus4"]   )
-  , ("A#m7-5", crd A      mnr `with` ["7","-5"] )
+  , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
   ]
   where crd = initChord
 
+-- conveniences for modifying a chord 
+-- normally these are used to further its specification.  Ideally reflect this in the types.
 with :: Chord -> [String] -> Chord
 with baseChord decorations = baseChord { cDecorations = decorations }
 on :: Chord -> Note -> Chord
