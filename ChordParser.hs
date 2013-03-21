@@ -160,13 +160,18 @@ testData =
   , ("Am"    , crd A      mnr                   ) 
   , ("Am7"   , crd A      mnr `with` ["7"]      )
   , ("AM7"   , crd A      maj `with` ["M7"]     )
-  , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
   , ("Gsus2" , crd G      maj `sus` 2           )
   , ("Gsus4" , crd G      maj `sus` 4           )
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
-  , ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
+  ] 
+  where crd = initChord
+unsupportedTestData = 
+  [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
+  , ("C+"    , crd C      aug                   )
+  , ("Cdim"  , crd C      dim                   )
+  , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
   , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
   , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
   , ("E7(b9)", crd E      maj `with` ["7", "b9"])
