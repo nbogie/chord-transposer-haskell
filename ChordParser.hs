@@ -2,7 +2,8 @@ module ChordParser where
 
 import Text.ParserCombinators.Parsec
 import Notes
-
+import Test.HUnit
+import Data.Either
 
 
 -- This could be useful as the core of a service which could take any ascii sheet music and change key
@@ -10,8 +11,12 @@ import Notes
 -- it could find and add guitar chord symbols, or make midi of the piano part, etc (but it doesn't know timing)
 -- must be able to support chords it doesn't understand (strange notations, human mistakes)
 -- We want to preserve position in the chord sheet so we can do substitutions (and extra annotations) in place
--- main :: IO ()
--- main    = parseAndPrint (unwords sampleInputs)
+main :: IO ()
+
+main    = do
+  tests
+  parseAndPrint (unwords sampleInputs)
+
 main2 :: IO ()
 main2    = interact parseAndShow
 
@@ -20,7 +25,7 @@ parseAndPrint input = do
   print input
   case parse pChords "foo" input of
     Left err -> print $ "error: " ++ (show err)
-    Right chords -> print chords
+    Right chords -> mapM_ print $ zip (words input) chords
 
 parseAndShow :: String -> String
 parseAndShow input = do
@@ -39,24 +44,6 @@ pChordLines = do
   cs <- endBy pChords newline
   eof
   return cs
-
-sampleInputs :: [String]
-sampleInputs = [ "A"
-  , "A#7-9"
-  , "Aaug"
-  , "A9"
-  , "Bbm7"
-  , "Ab"
-  , "F#dim"
-  , "A/F#"
-  , "Am"
-  , "Am7"
-  , "AM7"
-  , "Gsus2"
-  , "Gsus4"
-  , "A#m7-5"
-  , "Am/C"
-  ]
 
 pChords :: Parser [Chord]
 pChords = sepBy pChord spaces
@@ -118,3 +105,76 @@ pColor = do
             "m"   -> CCMinor
             _     -> CCMajor
 
+
+
+sampleInputs :: [String]
+sampleInputs = 
+  [ "A"
+  , "A#7-9"
+  , "Aaug"
+  , "A9"
+  , "Bbm7"
+  , "Ab"
+  , "F#dim"
+  , "A/F#"
+  , "Am"
+  , "Am7"
+  , "AM7"
+  , "Gsus2"
+  , "Gsus4"
+  , "A#m7-5"
+  , "Am/C"
+  ]
+
+
+tests = runTestTT $ TestList [ 4 ~=? 10 ]
+{- 
+tests = runTestTT $ TestList $ map testIt testData
+  where testIt inp exp = exp ~=? either (error "no parse") id (parse pChord inp inp)
+-}
+initChord :: Note -> ChordColor -> Chord
+initChord n color = Chord { rootNote = n, bassNote = Nothing, cColor = color, cDecorations = [] }
+
+maj = CCMajor
+mnr = CCMinor
+aug = CCAugmented
+dim = CCDiminished
+
+testData = 
+  [ ("A"     , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = []        })
+  , ("A#7-9" , Chord {rootNote = ASharp, bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["7","-9"]})
+  , ("Aaug"  , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCAugmented,  cDecorations = []        })
+  , ("A9"    , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["9"]     })
+  , ("Bbm7"  , Chord {rootNote = BFlat,  bassNote = Nothing,     cColor = CCMinor,      cDecorations = ["7"]     })
+  , ("Ab"    , Chord {rootNote = AFlat,  bassNote = Nothing,     cColor = CCMajor,      cDecorations = []        })
+  , ("F#dim" , Chord {rootNote = FSharp, bassNote = Nothing,     cColor = CCDiminished, cDecorations = []        })
+  , ("A/F#"  , Chord {rootNote = A,      bassNote = Just FSharp, cColor = CCMajor,      cDecorations = []        })
+  , ("Am"    , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMinor,      cDecorations = []        })
+  , ("Am7"   , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMinor,      cDecorations = ["7"]     })
+  , ("AM7"   , Chord {rootNote = A,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["M7"]    })
+  , ("Gsus2" , Chord {rootNote = G,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["sus2"]  })
+  , ("Gsus4" , Chord {rootNote = G,      bassNote = Nothing,     cColor = CCMajor,      cDecorations = ["sus4"]  })
+  , ("A#m7-5", Chord {rootNote = ASharp, bassNote = Nothing,     cColor = CCMinor,      cDecorations = ["7","-5"]})
+  , ("Am/C"  , Chord {rootNote = A,      bassNote = Just C,      cColor = CCMinor,      cDecorations = []        })
+  , ("A"     , crd A      maj                   )
+  , ("A#7-9" , crd ASharp maj `with` ["7","-9"] )
+  , ("Aaug"  , crd A      aug                   )
+  , ("A9"    , crd A      maj `with` ["9"]      )
+  , ("Bbm7"  , crd BFlat  mnr `with` ["7"]      )
+  , ("Ab"    , crd AFlat  maj                   )
+  , ("F#dim" , crd FSharp dim                   )
+  , ("A/F#"  , crd A      maj `on` FSharp       )
+  , ("Am"    , crd A      mnr                   ) 
+  , ("Am7"   , crd A      mnr `with` ["7"]      )
+  , ("AM7"   , crd A      maj `with` ["M7"]     )
+  , ("Gsus2" , crd G      maj `with` ["sus2"]   )
+  , ("Gsus4" , crd G      maj `with` ["sus4"]   )
+  , ("A#m7-5", crd A      mnr `with` ["7","-5"] )
+  , ("Am/C"  , crd A      mnr `on` C            )
+  ]
+  where crd = initChord
+
+with :: Chord -> [String] -> Chord
+with baseChord decorations = baseChord { cDecorations = decorations }
+on :: Chord -> Note -> Chord
+on   baseChord bNote       = baseChord { bassNote = Just bNote }
