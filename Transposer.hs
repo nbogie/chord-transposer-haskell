@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Transposer where
+import Debug.Trace
 import Data.Either (lefts, rights)
 import Data.Char (toLower)
 import Data.List (foldl', isPrefixOf)
@@ -24,10 +25,10 @@ transposeChordSheetStr amt =
 
 type Transposition = Int
 
-data ChordSheet = ChordSheet {csLines :: [ChordSheetLine]}
+data ChordSheet = ChordSheet {csLines :: [ChordSheetLine]} deriving (Show)
 
 data ChordSheetLine = ChordSheetLine {cslItems :: [ChordSheetItem], 
-                                      cslOrigText :: String}
+                                      cslOrigText :: String} deriving (Show)
 
 type ChordSheetItem = (Either String Chord, (String, Int))
 
@@ -64,22 +65,25 @@ printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
 
 printChordSheetLine :: ChordSheetLine -> String
 printChordSheetLine line@(ChordSheetLine items orig) = 
-  if lineLooksLikeChords line
-    then orig
-    else printToPositions items
+  if (lineLooksLikeChords line)
+    then printToPositions items
+    else orig
 
 -- Todo: Improve decision-making over whether a line is chords or not.
 -- a single line of text like "Coda:" will wrongly be parsed as a C chord with unrecognised, but carried, detail.
 -- This is because we wish to be so accommodating with allowing unrecognised chords past.
 -- Neither "Coda:", nor "Coro", nor "Bridge" are likely to be legal chords under anyone's notation!
+-- Ah, what to do for: "Repeat Gm7 for outro"  - The chord won't get transposed under current rules.
 lineLooksLikeChords (ChordSheetLine items orig) = 
   length (rights chordAttempts) >= length (lefts chordAttempts)
-  && any (\kw -> any (isPrefixOf kw . lower) origWords) keywords
+  && (not (lineContainsKeywords orig))
     where 
       chordAttempts = (map fst items)
-      keywords = map (map toLower) ["Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
-      lower = map toLower
-      origWords = words orig
+
+lineContainsKeywords str = any (\kw -> any (isPrefixOf kw . lower) (words str)) keywords
+  where
+    keywords = map (map toLower) ["Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
+    lower = map toLower
 
 printToPositions :: [ChordSheetItem] -> String
 printToPositions items = posPrint $ map f items
