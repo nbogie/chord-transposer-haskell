@@ -6,6 +6,8 @@ import Data.List (foldl')
 import ChordParser
 import LineSplitter
 import Notes
+-- import Control.Arrow ((>>^))
+-- import Data.Either
 
 main :: IO ()
 main = transposeStdin 3
@@ -44,13 +46,14 @@ transposeChordSheet trans cs = cs{csLines = map (transposeChordSheetLine trans) 
 transposeChordSheetLine :: Transposition -> ChordSheetLine -> ChordSheetLine
 transposeChordSheetLine trans csl = csl{cslItems = map (transposeChordSheetItem trans) (cslItems csl) }
 
+-- we don't transpose nonchords (Left items)
 transposeChordSheetItem :: Transposition -> ChordSheetItem -> ChordSheetItem
-transposeChordSheetItem trans (Right c, z) = (Right c{rootNote = upSemitones (rootNote c) trans,
-                                                      bassNote = newBassNote}, z)
+transposeChordSheetItem trans (c, z) = (fmap (transposeChord trans) c, z)
+
+transposeChord trans c = c{rootNote = upSemitones (rootNote c) trans, bassNote = newBassNote}
  where newBassNote = case bassNote c of
                         Just b -> Just (upSemitones b trans)
                         Nothing -> Nothing
-transposeChordSheetItem _trans (Left e, z)  = (Left e, z)
 
 printChordSheet :: ChordSheet -> String
 printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
