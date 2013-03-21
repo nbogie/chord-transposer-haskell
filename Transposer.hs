@@ -5,14 +5,14 @@ import Data.Either (lefts, rights)
 import Data.Char (toLower)
 import Data.List (foldl', isPrefixOf)
 -- import Player
-import ChordParser hiding (main)
+import ChordParser hiding (main, tests)
 import LineSplitter
 import Notes
 -- import Data.Either
+import Test.HUnit
 
 main :: IO ()
-main = transposeStdin 3
-
+main = tests >> transposeStdin 3
 
 transposeStdin :: Transposition -> IO () 
 transposeStdin amt = 
@@ -65,7 +65,7 @@ printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
 printChordSheetLine :: ChordSheetLine -> String
 printChordSheetLine line@(ChordSheetLine items orig) = 
   if (lineLooksLikeChords line)
-    then printToPositions items
+    then printCSIsAtPositions items
     else orig
 
 -- Todo: Improve decision-making over whether a line is chords or not.
@@ -84,14 +84,21 @@ lineContainsKeywords str = any (\kw -> any (isPrefixOf kw . lower) (words str)) 
     keywords = map (map toLower) ["Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
     lower = map toLower
 
-printToPositions :: [ChordSheetItem] -> String
-printToPositions items = posPrint $ map f items
+printCSIsAtPositions :: [ChordSheetItem] -> String
+printCSIsAtPositions items = 
+  printStringsAtPositions $ map f items
   where f (Left _, (text, pos)) = (text, pos)
         f (Right c, (_, pos))   = (chordToSym c, pos)
 
-posPrint :: [(String, Int)] -> String
-posPrint = foldl' f ""
+printStringsAtPositions :: [(String, Int)] -> String
+printStringsAtPositions = foldl' f ""
   where f acc (word, pos) = acc ++ replicate padLen ' ' ++ word
-          where 
-             padLen = max 1 (pos - length acc)
+          where padLen = if pos == 0
+                         then 0
+                         else max 1 (pos - length acc)
 
+tests = runTestTT $ TestList 
+  [ 4 ~=? 2+2
+  , "Hi" ~=? printStringsAtPositions [("Hi", 0)] -- no initial padding
+  , " Foo" ~=? printStringsAtPositions [("Foo", 1)] -- but original leading whitespace should be preserved
+  ]
