@@ -1,9 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Transposer where
 import Data.Either (lefts, rights)
-import Data.List (foldl')
+import Data.Char (toLower)
+import Data.List (foldl', isPrefixOf)
 -- import Player
-import ChordParser
+import ChordParser hiding (main)
 import LineSplitter
 import Notes
 -- import Control.Arrow ((>>^))
@@ -23,12 +24,16 @@ transposeChordSheetStr amt =
 
 type Transposition = Int
 
-type ChordSheetItem = (Either String Chord, (String, Int))
-
 data ChordSheet = ChordSheet {csLines :: [ChordSheetLine]}
 
 data ChordSheetLine = ChordSheetLine {cslItems :: [ChordSheetItem], 
                                       cslOrigText :: String}
+
+type ChordSheetItem = (Either String Chord, (String, Int))
+
+
+modifyLines :: ([ChordSheetLine] -> [ChordSheetLine]) -> ChordSheet -> ChordSheet
+modifyLines fn cs = cs { csLines = fn $ csLines cs }
 
 parseChordSheet :: String -> ChordSheet
 parseChordSheet input = ChordSheet $ map parseChordSheetLine (lines input)
@@ -39,9 +44,8 @@ parseChordSheetLine line = ChordSheetLine (map buildItem posns) line
     buildItem x = (parseStringToChord (fst x), x)
     posns = findWordPositions line
 
-
 transposeChordSheet :: Transposition -> ChordSheet -> ChordSheet
-transposeChordSheet trans cs = cs{csLines = map (transposeChordSheetLine trans) (csLines cs)}
+transposeChordSheet trans = modifyLines $ map (transposeChordSheetLine trans)
 
 transposeChordSheetLine :: Transposition -> ChordSheetLine -> ChordSheetLine
 transposeChordSheetLine trans csl = csl{cslItems = map (transposeChordSheetItem trans) (cslItems csl) }
@@ -59,10 +63,23 @@ printChordSheet :: ChordSheet -> String
 printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
 
 printChordSheetLine :: ChordSheetLine -> String
-printChordSheetLine (ChordSheetLine items orig) = 
-  if length (rights (map fst items)) < length (lefts (map fst items))
+printChordSheetLine line@(ChordSheetLine items orig) = 
+  if lineLooksLikeChords line
     then orig
     else printToPositions items
+
+-- Todo: Improve decision-making over whether a line is chords or not.
+-- a single line of text like "Coda:" will wrongly be parsed as a C chord with unrecognised, but carried, detail.
+-- This is because we wish to be so accommodating with allowing unrecognised chords past.
+-- Neither "Coda:", nor "Coro", nor "Bridge" are likely to be legal chords under anyone's notation!
+lineLooksLikeChords (ChordSheetLine items orig) = 
+  length (rights chordAttempts) >= length (lefts chordAttempts)
+  && any (\kw -> any (isPrefixOf kw . lower) origWords) keywords
+    where 
+      chordAttempts = (map fst items)
+      keywords = map (map toLower) ["Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
+      lower = map toLower
+      origWords = words orig
 
 printToPositions :: [ChordSheetItem] -> String
 printToPositions items = posPrint $ map f items
