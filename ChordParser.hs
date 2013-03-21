@@ -67,7 +67,11 @@ pChord = do
 
 pDecoration :: Parser String
 pDecoration = do 
-  d <- string "7" <|> string "M7" <|> string "9" <|> try (string "11") <|> try (string "13") <|> try (string "sus2") <|> try (string "sus4") <|> try (string "-5") <|> string "-9" 
+  d <- string "7" <|> string "M7" <|> 
+       string "9" <|> try (string "11") <|> try (string "13") <|> 
+       try (string "sus2") <|> try (string "sus4") <|> 
+       try (string "-5") <|> string "-9" <|>
+       try (string "#5") <|> string "#9" 
   return d
 
 pSlashBassNote :: Parser (Maybe Note)
@@ -166,6 +170,7 @@ testData =
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
   , ("C+"    , crd C      aug                   )
+  , ("F7#5#9"  , crd F      maj `with` ["7", "#5", "#9"])
   ] 
   where crd = initChord
 unsupportedTestData = 
