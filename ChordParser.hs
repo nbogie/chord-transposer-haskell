@@ -102,10 +102,11 @@ pNote = do
 -- anything else is major
 pColor :: Parser ChordColor
 pColor = do
-  s <- string "dim" <|>string "aug" <|> string "m" <|> return ""
+  s <- string "dim" <|>string "aug" <|> string "+" <|> string "m" <|> return ""
   return $ case s of
             "dim" -> CCDiminished
             "aug" -> CCAugmented
+            "+"   -> CCAugmented
             "m"   -> CCMinor
             _     -> CCMajor
 
@@ -164,12 +165,12 @@ testData =
   , ("Gsus4" , crd G      maj `sus` 4           )
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
+  , ("C+"    , crd C      aug                   )
   ] 
   where crd = initChord
 unsupportedTestData = 
   [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
-  , ("C+"    , crd C      aug                   )
   , ("Cdim"  , crd C      dim                   )
   , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
   , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
