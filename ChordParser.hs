@@ -138,7 +138,7 @@ tests = runTestTT $ TestList $ map testIt testData
   where 
     testIt :: (String, Chord) -> Test
     testIt (inp, exp) = ("When input is " ++ inp) ~: 
-                           exp ~=? either (error "no parse") id (parse pChord inp inp)
+                           exp ~=? either (error "(no parse)") id (parse pChord "" inp)
 
 initChord :: Note -> ChordColor -> Chord
 initChord n color = Chord { rootNote = n, bassNote = Nothing, cColor = color, cDecorations = [] }
@@ -147,7 +147,7 @@ maj = CCMajor
 mnr = CCMinor
 aug = CCAugmented
 dim = CCDiminished
-
+sus c i = c { cDecorations = cDecorations c ++ ["sus" ++ show i] }
 testData = 
   [ ("A"     , crd A      maj                   )
   , ("A#7-9" , crd ASharp maj `with` ["7","-9"] )
@@ -160,10 +160,17 @@ testData =
   , ("Am"    , crd A      mnr                   ) 
   , ("Am7"   , crd A      mnr `with` ["7"]      )
   , ("AM7"   , crd A      maj `with` ["M7"]     )
-  , ("Gsus2" , crd G      maj `with` ["sus2"]   )
-  , ("Gsus4" , crd G      maj `with` ["sus4"]   )
+  , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
+  , ("Gsus2" , crd G      maj `sus` 2           )
+  , ("Gsus4" , crd G      maj `sus` 4           )
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
+  , ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
+  , ("Bb-/F" , crd BFlat  mnr `on` F            )
+  , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
+  , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
+  , ("E7(b9)", crd E      maj `with` ["7", "b9"])
+  , ("A-Maj7", crd A      mnr `with` ["Maj7"]   )
   ]
   where crd = initChord
 
