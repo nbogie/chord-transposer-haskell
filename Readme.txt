@@ -1,5 +1,5 @@
-This project parses informal chord sheets and transposes the chords it finds, 
-outputting the modified chord sheet.
+This toy project parses informal chord sheets and transposes the chords it 
+finds, outputting the modified chord sheet.
 
 This is a quick hack by a haskell newbie and contains many bad practices.
 I developed it in order to practice with the parsec parsing library.
