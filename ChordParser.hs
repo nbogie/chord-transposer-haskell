@@ -62,7 +62,7 @@ pChord = do
   r <- pNote
   c <- pColor
   ds <- many pDecoration <|> return []
-  bn <- pBaseNote <|> return Nothing
+  bn <- pSlashBassNote <|> return Nothing
   return $ Chord r bn c ds
 
 pDecoration :: Parser String
@@ -70,8 +70,8 @@ pDecoration = do
   d <- string "7" <|> string "M7" <|> string "9" <|> try (string "11") <|> try (string "13") <|> try (string "sus2") <|> try (string "sus4") <|> try (string "-5") <|> string "-9" 
   return d
 
-pBaseNote :: Parser (Maybe Note)
-pBaseNote = fmap Just (string "/" >> pNote)
+pSlashBassNote :: Parser (Maybe Note)
+pSlashBassNote = fmap Just (string "/" >> pNote)
 
 pNote :: Parser Note
 pNote = do
