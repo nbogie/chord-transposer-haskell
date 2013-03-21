@@ -171,7 +171,6 @@ testData =
 unsupportedTestData = 
   [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
-  , ("Cdim"  , crd C      dim                   )
   , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
   , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
   , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
