@@ -78,11 +78,11 @@ data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cColor::ChordColor,
                     cDecorations ::[String] } deriving (Eq, Show, Ord)
 
 chordToSym :: Chord -> String
-chordToSym Chord{bassNote = bn, rootNote = rn, cColor = c} = 
-  let sbn = case bn of
+chordToSym Chord{bassNote = bn, rootNote = rn, cColor = c, cDecorations  = decs } = 
+  let slashBass = case bn of
               Just n -> '/':noteToSym n
               Nothing -> ""
-  in noteToSym rn ++ colorToSym c ++ sbn
+  in noteToSym rn ++ colorToSym c ++ concat decs ++ slashBass
 
 colorToSym :: ChordColor -> String
 colorToSym CCMajor = ""
