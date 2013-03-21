@@ -8,7 +8,6 @@ import Data.List (foldl', isPrefixOf)
 import ChordParser hiding (main)
 import LineSplitter
 import Notes
--- import Control.Arrow ((>>^))
 -- import Data.Either
 
 main :: IO ()
@@ -43,7 +42,7 @@ parseChordSheetLine :: String -> ChordSheetLine
 parseChordSheetLine line = ChordSheetLine (map buildItem posns) line
   where 
     buildItem x = (parseStringToChord (fst x), x)
-    posns = findWordPositions line
+    posns = wordsAndPositions line
 
 transposeChordSheet :: Transposition -> ChordSheet -> ChordSheet
 transposeChordSheet trans = modifyLines $ map (transposeChordSheetLine trans)
