@@ -66,25 +66,25 @@ fromPure  PGSharp = GSharp
  
 -- Question: how to modify the already derived Enum of PureNote to cycle from top note to bottom note?
 
--- data ChordColor = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
--- data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cColor::ChordColor, 
+-- data ChordQuality = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
+-- data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cQuality::ChordQuality, 
 --                    cDecorations ::[String] } deriving (Eq, Show, Ord)
 -- main = maina
 
 data Note = AFlat | A | ASharp | BFlat |  B | C | CSharp | DFlat |  D | DSharp 
                   | EFlat |  E | F | FSharp | GFlat |  G | GSharp deriving (Eq, Show, Ord)
-data ChordColor = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
-data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cColor::ChordColor, 
+data ChordQuality = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
+data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cQuality::ChordQuality, 
                     cDecorations ::[String] } deriving (Eq, Show, Ord)
 
 chordToSym :: Chord -> String
-chordToSym Chord{bassNote = bn, rootNote = rn, cColor = c, cDecorations  = decs } = 
+chordToSym Chord{bassNote = bn, rootNote = rn, cQuality = c, cDecorations  = decs } = 
   let slashBass = case bn of
               Just n -> '/':noteToSym n
               Nothing -> ""
   in noteToSym rn ++ colorToSym c ++ concat decs ++ slashBass
 
-colorToSym :: ChordColor -> String
+colorToSym :: ChordQuality -> String
 colorToSym CCMajor = ""
 colorToSym CCMinor = "m"
 colorToSym CCDiminished = "dim"

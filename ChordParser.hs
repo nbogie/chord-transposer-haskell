@@ -60,7 +60,7 @@ pChord :: Parser Chord
 -- Root [m | maj7] [dim] [7] [9] [-5 (secondary decorations)]        [/BassNote]
 pChord = do
   r <- pNote
-  c <- pColor
+  c <- pQuality
   ds <- many pDecoration <|> return []
   bn <- pSlashBassNote <|> return Nothing
   return $ Chord r bn c ds
@@ -104,8 +104,8 @@ pNote = do
 -- m (not followed by an a for "maj") (peeking - don't consume)
 -- or "dim"
 -- anything else is major
-pColor :: Parser ChordColor
-pColor = do
+pQuality :: Parser ChordQuality
+pQuality = do
   s <- string "dim" <|>string "aug" <|> string "+" <|> string "m" <|> return ""
   return $ case s of
             "dim" -> CCDiminished
@@ -145,14 +145,16 @@ tests = runTestTT $ TestList $ map testIt testData
     testIt (inp, exp) = ("When input is " ++ inp) ~: 
                            exp ~=? either (error "(no parse)") id (parse pChord "" inp)
 
-initChord :: Note -> ChordColor -> Chord
-initChord n color = Chord { rootNote = n, bassNote = Nothing, cColor = color, cDecorations = [] }
+initChord :: Note -> ChordQuality -> Chord
+initChord n color = Chord { rootNote = n, bassNote = Nothing, cQuality = color, cDecorations = [] }
 
 maj = CCMajor
 mnr = CCMinor
 aug = CCAugmented
 dim = CCDiminished
+
 sus c i = c { cDecorations = cDecorations c ++ ["sus" ++ show i] }
+
 testData = 
   [ ("A"     , crd A      maj                   )
   , ("A#7-9" , crd ASharp maj `with` ["7","-9"] )
@@ -167,6 +169,7 @@ testData =
   , ("AM7"   , crd A      maj `with` ["M7"]     )
   , ("Gsus2" , crd G      maj `sus` 2           )
   , ("Gsus4" , crd G      maj `sus` 4           )
+  , ("Gsus9" , crd G      maj `sus` 4 `with` ["9"] )
   , ("G7sus4/D", crd G    maj `with` ["7"] `sus` 4 `on` D   )
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
