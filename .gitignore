@@ -1,3 +1,4 @@
+cabal-dev
 *.swp
 dist
 inputs/not_public_domain
