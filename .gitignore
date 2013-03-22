@@ -1,3 +1,5 @@
 *.swp
 dist
 inputs/not_public_domain
+songs_to_get.txt
+
