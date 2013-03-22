@@ -36,26 +36,26 @@ parseAndShow input = do
        let eitherChords = map (parse pChordLines "foo") ls
        show eitherChords
 
-parseStringToChord :: String -> Either String Chord
+parseStringToChord :: String -> Either String (Chord Note)
 parseStringToChord xs = case parse pChord ("Input: "++xs) xs of
                           Left err -> Left $ show err
                           Right c -> Right c
 
 -- can't get this to terminate correctly - eof is always unexpected
-pChordLines :: Parser [[Chord]]
+pChordLines :: Parser [[Chord Note]]
 pChordLines = do 
   cs <- endBy pChords newline
   eof
   return cs
 
-pChords :: Parser [Chord]
+pChords :: Parser [Chord Note]
 pChords = sepBy pChord spaces
 
 -- can't do these yet - confusion with major seventh
 -- Amaj7
 -- Amaj7/G
 
-pChord :: Parser Chord
+pChord :: Parser (Chord Note)
 -- Root [m | maj7] [dim] [7] [9] [-5 (secondary decorations)]        [/BassNote]
 pChord = do
   r <- pNote
@@ -122,11 +122,11 @@ pQuality = do
 -}
 tests = runTestTT $ TestList $ map testIt testData
   where 
-    testIt :: (String, Chord) -> Test
+    testIt :: (String, (Chord Note)) -> Test
     testIt (inp, exp) = ("When input is " ++ inp) ~: 
                            exp ~=? either (error "(no parse)") id (parse pChord "" inp)
 
-initChord :: Note -> ChordQuality -> Chord
+initChord :: (Symmable a) => a -> ChordQuality -> Chord a 
 initChord n color = Chord { rootNote = n, bassNote = Nothing, cQuality = color, cDecorations = [] }
 
 -- conveniences for qualities
@@ -172,7 +172,7 @@ unsupportedTestData =
 
 -- conveniences for modifying a chord 
 -- normally these are used to further its specification.  Ideally reflect this in the types.
-with :: Chord -> [String] -> Chord
+with :: Chord a -> [String] -> Chord a
 with baseChord decorations = baseChord { cDecorations = cDecorations baseChord ++ decorations }
-on :: Chord -> Note -> Chord
+on :: Chord a -> a -> Chord a
 on   baseChord bNote       = baseChord { bassNote = Just bNote }

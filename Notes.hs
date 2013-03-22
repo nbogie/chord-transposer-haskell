@@ -22,13 +22,12 @@ instance Interval Seventh where
   semitones  FlatSeventh   =  10
   semitones  MajorSeventh  =  11
 
-
 -- TODO: this needs an enumerable instance of Note which can wrap around
 upSemitones :: Note -> Int -> Note
 upSemitones n i = fromPure $ toEnum tag
-  -- todo: handle loop around
   where tag = (fromEnum (toPure n) + i) `mod` 12
 
+-- This type has only enharmonic equivalents.  one constructor per semitone.  Used internally only.
 data PureNote = PA | PASharp | PB | PC | PCSharp | PD | PDSharp | PE | PF | PFSharp | PG | PGSharp deriving (Show, Eq, Ord, Enum)
 
 toPure :: Note -> PureNote
@@ -66,18 +65,18 @@ fromPure  PGSharp = GSharp
  
 -- Question: how to modify the already derived Enum of PureNote to cycle from top note to bottom note?
 
--- data ChordQuality = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
--- data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cQuality::ChordQuality, 
---                    cDecorations ::[String] } deriving (Eq, Show, Ord)
--- main = maina
-
-data Note = AFlat | A | ASharp | BFlat |  B | C | CSharp | DFlat |  D | DSharp 
-                  | EFlat |  E | F | FSharp | GFlat |  G | GSharp deriving (Eq, Show, Ord)
+data Note = AFlat | A | ASharp | BFlat |  B | C | 
+            CSharp | DFlat |  D | DSharp | EFlat |  E | 
+            F | FSharp | GFlat |  G | GSharp deriving (Eq, Show, Ord)
 data ChordQuality = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
-data Chord = Chord {rootNote::Note, bassNote::Maybe Note, cQuality::ChordQuality, 
-                    cDecorations ::[String] } deriving (Eq, Show, Ord)
+data Chord a = Chord 
+           { rootNote::a
+           , bassNote::Maybe a
+           , cQuality::ChordQuality
+           , cDecorations ::[String] 
+           } deriving (Eq, Show, Ord)
 
-chordToSym :: Chord -> String
+chordToSym :: (Symmable a) => Chord a -> String
 chordToSym Chord{bassNote = bn, rootNote = rn, cQuality = c, cDecorations  = decs } = 
   let slashBass = case bn of
               Just n -> '/':noteToSym n
@@ -90,22 +89,40 @@ colorToSym CCMinor = "m"
 colorToSym CCDiminished = "dim"
 colorToSym CCAugmented = "aug"
 
-                 
-noteToSym :: Note -> String
-noteToSym AFlat = "Ab"
-noteToSym A = "A"
-noteToSym ASharp = "A#"
-noteToSym B = "B"
-noteToSym BFlat = "Bb"
-noteToSym C = "C"
-noteToSym CSharp = "C#"
-noteToSym D = "D"
-noteToSym DSharp = "D#"
-noteToSym DFlat = "Db"
-noteToSym E = "E"
-noteToSym EFlat = "Eb"
-noteToSym F = "F"
-noteToSym FSharp = "F#"
-noteToSym G = "G"
-noteToSym GSharp = "G#"
-noteToSym GFlat = "Gb"
+class Symmable a where
+   noteToSym :: a -> String
+
+data RomanNote = I | IIFlat | II | IIIFlat | III | IV | Vb | V | VIFlat | VI | VIIFlat | VII deriving (Eq, Show, Ord)
+
+instance Symmable RomanNote where
+   noteToSym I = "I"
+   noteToSym IIFlat = "IIb"
+   noteToSym II = "II"
+   noteToSym IIIFlat = "IIIb"
+   noteToSym III = "III"
+   noteToSym IV = "IV"
+   noteToSym Vb = "Vb"
+   noteToSym V = "V"
+   noteToSym VIFlat = "VIb"
+   noteToSym VI = "VI"
+   noteToSym VIIFlat = "VIIb"
+   noteToSym VII = "VII"
+
+instance Symmable Note where
+   noteToSym AFlat = "Ab"
+   noteToSym A = "A"
+   noteToSym ASharp = "A#"
+   noteToSym B = "B"
+   noteToSym BFlat = "Bb"
+   noteToSym C = "C"
+   noteToSym CSharp = "C#"
+   noteToSym D = "D"
+   noteToSym DSharp = "D#"
+   noteToSym DFlat = "Db"
+   noteToSym E = "E"
+   noteToSym EFlat = "Eb"
+   noteToSym F = "F"
+   noteToSym FSharp = "F#"
+   noteToSym G = "G"
+   noteToSym GSharp = "G#"
+   noteToSym GFlat = "Gb"

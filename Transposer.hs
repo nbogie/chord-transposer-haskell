@@ -26,7 +26,7 @@ data ChordSheet = ChordSheet {csLines :: [ChordSheetLine]} deriving (Show)
 data ChordSheetLine = ChordSheetLine {cslItems :: [ChordSheetItem], 
                                       cslOrigText :: String} deriving (Show)
 
-type ChordSheetItem = (Either String Chord, (String, Int))
+type ChordSheetItem = (Either String (Chord Note), (String, Int))
 
 
 modifyLines :: ([ChordSheetLine] -> [ChordSheetLine]) -> ChordSheet -> ChordSheet
@@ -99,7 +99,19 @@ tests = runTestTT $ TestList [printStringsTests, romanizeTests]
 romanizeTests = TestList 
   $ map (testRomanizationInKey C MajorScale) [("Am7", "ii7"), ("D9", "II9")]
 data ScaleType = MajorScale deriving (Show)
-romanizeInKey key chord = initChord D mnr
+
+type Key = (Note, ScaleType)
+
+romanizeInKey ::  Key -> Chord Note -> Chord RomanNote
+romanizeInKey key chord = Chord { 
+  rootNote = newRoot, 
+  bassNote = newBassNote,
+  cQuality = cQuality chord,
+  cDecorations = cDecorations chord }
+  where 
+    newRoot = II
+    newBassNote = Nothing
+
 -- testRomanizationInKey :: Note -> ScaleType -> (String, String) -> TestCase
 testRomanizationInKey keyRoot keyScale (inp, expectedSym) = 
   label ~: expectedSym ~=? chordToSym (romanizeInKey (keyRoot, keyScale) chord)
