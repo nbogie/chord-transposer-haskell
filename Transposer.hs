@@ -7,6 +7,7 @@ import ChordParser hiding (main, tests)
 import LineSplitter
 import Notes
 import Test.HUnit
+import Utils (bool)
 
 main :: IO ()
 main = tests >> transposeStdin 3 True
@@ -16,12 +17,15 @@ transposeStdin amt formatAsRoman =
     interact $ printChordSheet . (bool romanizeSheet id formatAsRoman) . transposeChordSheet amt . parseChordSheet
 
 romanizeSheet :: ChordSheet -> ChordSheet
-romanizeSheet = withEachChordInSheet (romanizeInKey (C,MajorScale))
+romanizeSheet = withEachChordInSheet (transposeChord 1)  --  (romanizeInKey (C,MajorScale))
 
-withEachChordInSheet f cs = cs
-
-bool :: a -> a -> Bool -> a
-bool t f b = if b then t else f
+modifyLines :: ([ChordSheetLine] -> [ChordSheetLine]) -> ChordSheet -> ChordSheet
+modifyLines fn cs = cs { csLines = fn $ csLines cs }
+withEachChordInSheet f    = modifyLines $ map (withEachChordInLine f)
+withEachChordInLine f csl = csl { cslItems = map (withOneCSLI f) origItems } 
+  where origItems = cslItems csl
+-- we don't transpose nonchords (Left items)
+withOneCSLI f (c,z)       = (fmap f c, z)
 
 transposeChordSheetStr :: Transposition -> String -> String
 transposeChordSheetStr amt = 
@@ -37,9 +41,6 @@ data ChordSheetLine = ChordSheetLine {cslItems :: [ChordSheetItem],
 type ChordSheetItem = (Either String (Chord Note), (String, Int))
 
 
-modifyLines :: ([ChordSheetLine] -> [ChordSheetLine]) -> ChordSheet -> ChordSheet
-modifyLines fn cs = cs { csLines = fn $ csLines cs }
-
 parseChordSheet :: String -> ChordSheet
 parseChordSheet input = ChordSheet $ map parseChordSheetLine (lines input)
 
@@ -50,14 +51,7 @@ parseChordSheetLine line = ChordSheetLine (map buildItem posns) line
     posns = wordsAndPositions line
 
 transposeChordSheet :: Transposition -> ChordSheet -> ChordSheet
-transposeChordSheet trans = modifyLines $ map (transposeChordSheetLine trans)
-
-transposeChordSheetLine :: Transposition -> ChordSheetLine -> ChordSheetLine
-transposeChordSheetLine trans csl = csl{cslItems = map (transposeChordSheetItem trans) (cslItems csl) }
-
--- we don't transpose nonchords (Left items)
-transposeChordSheetItem :: Transposition -> ChordSheetItem -> ChordSheetItem
-transposeChordSheetItem trans (c, z) = (fmap (transposeChord trans) c, z)
+transposeChordSheet trans = withEachChordInSheet (transposeChord trans)
 
 transposeChord ::  Int -> Chord Note -> Chord Note
 transposeChord trans c = c{rootNote = upSemitones (rootNote c) trans, bassNote = newBassNote}
