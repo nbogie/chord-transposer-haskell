@@ -2,3 +2,18 @@ Notes:
 Wikipedia "Rules to decode chord names and symbols":
 http://en.wikipedia.org/wiki/Chord_names_and_symbols_(jazz_and_pop_music)#Rules_to_decode_chord_names_and_symbols
 
+As a chord can be both based on an absolute pitch, Dm7, FMaj7 and relative, ii, IV, the chord data type must be capable of representing both.  In fact with chords where a bass note is indicated, it is occasionally mixed.  Fmaj7/II, though never IV/G.
+I first try a polymorphic data type for this:
+Chord a = Chord { rootNote :: a, quality::ChordQuality, ... }
+
+but suspect it's enough to do 
+
+data Note = N AbsNote | R RelNote
+where
+AbsNote = C | CSharp | D ...
+RelNote = I | ISharp | II ...
+
+the latter approach has the advantage that a list can contain chords of both styles, as they're both of the same concrete type.
+The typeclass would allow our chord to remain open for use with new rootnote types, but that's unlikely to be necessary.
+
+It's also possible that we can just always hold the chord internally with an absolute pitch and a key, and only go to roman numerals when we print.  However, we will eventually want to parse roman numeral chords and preserve what's written (even if we'd have said an enharmonic equivalent, for instance, when outputting).
