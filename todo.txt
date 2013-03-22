@@ -7,7 +7,6 @@ I think when outputting the chords we have to preserve the notation type, so aft
  * report if any chord line was partially parsed - warns user about likely errors.  this is key to useability - we will ALWAYS have parse errors, even just from human mistakes in the input.
  * parse according to the wikipedia table?
  * detect key
- * given a key, report chords in roman numeral form.  Start test first.  test set will look like:
  in C majr,  [Am7 ->  ii7, D9 -> II9] (where those are all strings)
  * harvest many example chord sheets, and build list of every chord symbol found
  * sus chords replace the third with a 2nd or 4th. sus on its own means sus4, so Asus9 means Asus4 with a 9th.
@@ -20,3 +19,4 @@ I think when outputting the chords we have to preserve the notation type, so aft
  DONE
 
  * chord color rename to chord quality
+ * given a key, report chords in roman numeral form.  Start test first.  test set will look like:

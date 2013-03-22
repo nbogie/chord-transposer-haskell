@@ -9,11 +9,19 @@ import Notes
 import Test.HUnit
 
 main :: IO ()
-main = tests >> transposeStdin 3
+main = tests >> transposeStdin 3 True
 
-transposeStdin :: Transposition -> IO () 
-transposeStdin amt = 
-    interact $ printChordSheet . transposeChordSheet amt . parseChordSheet
+transposeStdin :: Transposition -> Bool -> IO () 
+transposeStdin amt formatAsRoman = 
+    interact $ printChordSheet . (bool romanizeSheet id formatAsRoman) . transposeChordSheet amt . parseChordSheet
+
+romanizeSheet :: ChordSheet -> ChordSheet
+romanizeSheet = withEachChordInSheet (romanizeInKey (C,MajorScale))
+
+withEachChordInSheet f cs = cs
+
+bool :: a -> a -> Bool -> a
+bool t f b = if b then t else f
 
 transposeChordSheetStr :: Transposition -> String -> String
 transposeChordSheetStr amt = 
@@ -51,6 +59,7 @@ transposeChordSheetLine trans csl = csl{cslItems = map (transposeChordSheetItem 
 transposeChordSheetItem :: Transposition -> ChordSheetItem -> ChordSheetItem
 transposeChordSheetItem trans (c, z) = (fmap (transposeChord trans) c, z)
 
+transposeChord ::  Int -> Chord Note -> Chord Note
 transposeChord trans c = c{rootNote = upSemitones (rootNote c) trans, bassNote = newBassNote}
  where newBassNote = case bassNote c of
                         Just b -> Just (upSemitones b trans)
@@ -97,20 +106,23 @@ printStringsAtPositions = foldl' f ""
 tests = runTestTT $ TestList [printStringsTests, romanizeTests]
 
 romanizeTests = TestList 
-  $ map (testRomanizationInKey C MajorScale) [("Am7", "ii7"), ("D9", "II9")]
+  $ map (testRomanizationInKey C MajorScale) [("Em9", "iii9")
+  ,("Am7", "vi7"), ("D9", "II9"), ("Gsus4/F", "Vsus4/IV")]
 data ScaleType = MajorScale deriving (Show)
 
 type Key = (Note, ScaleType)
+rootOfKey :: Key -> Note
+rootOfKey = fst
 
 romanizeInKey ::  Key -> Chord Note -> Chord RomanNote
-romanizeInKey key chord = Chord { 
+romanizeInKey (keyRoot,_) chord = Chord { 
   rootNote = newRoot, 
   bassNote = newBassNote,
   cQuality = cQuality chord,
   cDecorations = cDecorations chord }
   where 
-    newRoot = II
-    newBassNote = Nothing
+    newRoot     = toRoman keyRoot (rootNote chord)
+    newBassNote = fmap (toRoman keyRoot) $ bassNote chord
 
 -- testRomanizationInKey :: Note -> ScaleType -> (String, String) -> TestCase
 testRomanizationInKey keyRoot keyScale (inp, expectedSym) = 
