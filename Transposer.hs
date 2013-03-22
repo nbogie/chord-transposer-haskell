@@ -8,23 +8,61 @@ import LineSplitter
 import Notes
 import Test.HUnit
 import Utils (bool)
+import Data.Maybe (listToMaybe, fromMaybe)
 
 main :: IO ()
-main = tests >> transposeStdin 3 True
+main = tests >> transposeStdin 0 True-- flag is to romanize 
+
+data ChordSheet a = ChordSheet {csLines :: [ChordSheetLine a]} deriving (Show)
+
+data ChordSheetLine a = ChordSheetLine {cslItems :: [ChordSheetItem a], 
+                                        cslOrigText :: String} deriving (Show)
+
+type ChordSheetItem a = (Either String (Chord a), (String, Int))
+
+-- currently, a chord sheet may have many "chords" optimistically partially parsed.  Ignore these by asking only for the chords from lines that look like chords
+chordsInSheet ::  ChordSheet a -> [Chord a]
+chordsInSheet = rights . map fst . concatMap cslItems . filter lineLooksLikeChords . csLines
 
 transposeStdin :: Transposition -> Bool -> IO () 
 transposeStdin amt formatAsRoman = 
-    interact $ printChordSheet . (bool romanizeSheet id formatAsRoman) . transposeChordSheet amt . parseChordSheet
+    interact $ (bool (printChordSheet . romanizeSheet) 
+                     (printChordSheet . id)
+                     formatAsRoman) 
+               . transposeChordSheet amt . traceChords . parseChordSheet
 
-romanizeSheet :: ChordSheet -> ChordSheet
-romanizeSheet = withEachChordInSheet (transposeChord 1)  --  (romanizeInKey (C,MajorScale))
+traceChords cs = trace (unlines $ map show $ chordsInSheet cs) cs
 
-modifyLines :: ([ChordSheetLine] -> [ChordSheetLine]) -> ChordSheet -> ChordSheet
+romanizeSheet :: ChordSheet Note -> ChordSheet RomanNote
+romanizeSheet cs = traceShow key $ withEachChordInSheet (romanizeInKey key) cs
+  where key = guessKey cs
+
+guessKey :: ChordSheet Note -> Key -- TODO: return probability, or perhaps alternatives
+guessKey cs = fromMaybe (error "couldn't guess key") (keyFromFirstChord cs) --TODO: handle unguessable key (e.g. no chords)
+
+keyFromFirstChord :: ChordSheet Note -> Maybe Key
+keyFromFirstChord cs = fmap keyFromChord firstChord
+  where firstChord = listToMaybe $ chordsInSheet cs
+
+keyFromChord :: Chord Note -> Key
+keyFromChord c = (rootNote c, MajorScale) --TODO: consider colour of chord
+
+chordQualityToKeyType CCMinor = MinorScale
+chordQualityToKeyType CCMajor = MajorScale
+chordQualityToKeyType CCDiminished = MajorScale -- ?
+chordQualityToKeyType CCAugmented = MajorScale  -- ?
+
+modifyLines :: ([ChordSheetLine a] -> [ChordSheetLine b]) -> ChordSheet a -> ChordSheet b
 modifyLines fn cs = cs { csLines = fn $ csLines cs }
+
+withEachChordInSheet :: (Chord a -> Chord b) -> ChordSheet a -> ChordSheet b
 withEachChordInSheet f    = modifyLines $ map (withEachChordInLine f)
+
+withEachChordInLine :: (Chord t -> Chord a) -> ChordSheetLine t -> ChordSheetLine a
 withEachChordInLine f csl = csl { cslItems = map (withOneCSLI f) origItems } 
   where origItems = cslItems csl
 -- we don't transpose nonchords (Left items)
+withOneCSLI :: (Chord a -> Chord b) -> ChordSheetItem a -> ChordSheetItem b 
 withOneCSLI f (c,z)       = (fmap f c, z)
 
 transposeChordSheetStr :: Transposition -> String -> String
@@ -33,24 +71,16 @@ transposeChordSheetStr amt =
 
 type Transposition = Int
 
-data ChordSheet = ChordSheet {csLines :: [ChordSheetLine]} deriving (Show)
-
-data ChordSheetLine = ChordSheetLine {cslItems :: [ChordSheetItem], 
-                                      cslOrigText :: String} deriving (Show)
-
-type ChordSheetItem = (Either String (Chord Note), (String, Int))
-
-
-parseChordSheet :: String -> ChordSheet
+parseChordSheet :: String -> ChordSheet Note
 parseChordSheet input = ChordSheet $ map parseChordSheetLine (lines input)
 
-parseChordSheetLine :: String -> ChordSheetLine
+parseChordSheetLine :: String -> ChordSheetLine Note
 parseChordSheetLine line = ChordSheetLine (map buildItem posns) line
   where 
     buildItem x = (parseStringToChord (fst x), x)
     posns = wordsAndPositions line
 
-transposeChordSheet :: Transposition -> ChordSheet -> ChordSheet
+transposeChordSheet :: Transposition -> ChordSheet Note -> ChordSheet Note
 transposeChordSheet trans = withEachChordInSheet (transposeChord trans)
 
 transposeChord ::  Int -> Chord Note -> Chord Note
@@ -59,10 +89,10 @@ transposeChord trans c = c{rootNote = upSemitones (rootNote c) trans, bassNote =
                         Just b -> Just (upSemitones b trans)
                         Nothing -> Nothing
 
-printChordSheet :: ChordSheet -> String
+printChordSheet :: (Symmable a) => ChordSheet a -> String
 printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
 
-printChordSheetLine :: ChordSheetLine -> String
+printChordSheetLine :: (Symmable a) => ChordSheetLine a -> String
 printChordSheetLine line@(ChordSheetLine items orig) = 
   if (lineLooksLikeChords line)
     then printCSIsAtPositions items
@@ -84,7 +114,7 @@ lineContainsKeywords str = any (\kw -> any (isPrefixOf kw . lower) (words str)) 
     keywords = map (map toLower) ["Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
     lower = map toLower
 
-printCSIsAtPositions :: [ChordSheetItem] -> String
+printCSIsAtPositions :: (Symmable a) => [ChordSheetItem a] -> String
 printCSIsAtPositions items = 
   printStringsAtPositions $ map f items
   where f (Left _, (text, pos)) = (text, pos)
@@ -102,7 +132,7 @@ tests = runTestTT $ TestList [printStringsTests, romanizeTests]
 romanizeTests = TestList 
   $ map (testRomanizationInKey C MajorScale) [("Em9", "iii9")
   ,("Am7", "vi7"), ("D9", "II9"), ("Gsus4/F", "Vsus4/IV")]
-data ScaleType = MajorScale deriving (Show)
+data ScaleType = MajorScale | MinorScale deriving (Show) -- TODO: multiple minor keys
 
 type Key = (Note, ScaleType)
 rootOfKey :: Key -> Note

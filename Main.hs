@@ -9,7 +9,7 @@ import Data.Data
 
 main :: IO ()
 main = do opts <- cmdArgsRun optsConfig
-          print opts
+          -- print opts
           let t = transpose opts
           let asRoman = roman opts
           transposeStdin t asRoman
