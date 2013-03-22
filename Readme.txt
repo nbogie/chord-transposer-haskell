@@ -13,6 +13,8 @@ Usage:
 To transpose some song up 3 semitones:
 
 runhaskell Main.hs --transpose=3 < song.txt
+To rewrite absolute chords with relative roman numerals
+runhaskell Main.hs -r < song.txt
 
 For more help:
 
