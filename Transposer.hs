@@ -1,14 +1,11 @@
-{-# LANGUAGE DeriveDataTypeable #-}
 module Transposer where
 import Debug.Trace
 import Data.Either (lefts, rights)
 import Data.Char (toLower)
 import Data.List (foldl', isPrefixOf)
--- import Player
 import ChordParser hiding (main, tests)
 import LineSplitter
 import Notes
--- import Data.Either
 import Test.HUnit
 
 main :: IO ()
@@ -97,7 +94,22 @@ printStringsAtPositions = foldl' f ""
                          then 0
                          else max 1 (pos - length acc)
 
-tests = runTestTT $ TestList 
+tests = runTestTT $ TestList [printStringsTests, romanizeTests]
+
+romanizeTests = TestList 
+  $ map (testRomanizationInKey C MajorScale) [("Am7", "ii7"), ("D9", "II9")]
+data ScaleType = MajorScale deriving (Show)
+romanizeInKey key chord = initChord D mnr
+-- testRomanizationInKey :: Note -> ScaleType -> (String, String) -> TestCase
+testRomanizationInKey keyRoot keyScale (inp, expectedSym) = 
+  label ~: expectedSym ~=? chordToSym (romanizeInKey (keyRoot, keyScale) chord)
+  where 
+    label = "in "++show(keyRoot, keyScale) ++ " with input " ++ inp
+    chord = case parseStringToChord inp of
+                Right c -> c
+                Left err -> error err -- todo: test failure
+  
+printStringsTests = TestList 
   [ 4 ~=? 2+2
   , "Hi" ~=? printStringsAtPositions [("Hi", 0)] -- no initial padding
   , " Foo" ~=? printStringsAtPositions [("Foo", 1)] -- but original leading whitespace should be preserved
