@@ -2,7 +2,7 @@ module Transposer where
 import Debug.Trace
 import Data.Either (lefts, rights)
 import Data.Char (toLower)
-import Data.List (foldl', isPrefixOf)
+import Data.List (foldl', isPrefixOf, nub, sort)
 import ChordParser hiding (main, tests)
 import LineSplitter
 import Notes
@@ -29,12 +29,18 @@ transposeStdin amt formatAsRoman =
     interact $ (bool (printChordSheet . romanizeSheet) 
                      (printChordSheet . id)
                      formatAsRoman) 
-               . transposeChordSheet amt . traceChords . parseChordSheet
+               . transposeChordSheet amt . traceInline "chord summary" summarizeChords . parseChordSheet
 
-traceChords cs = trace (unlines $ map show $ chordsInSheet cs) cs
+traceInline ::  String -> (a -> String) -> a -> a
+traceInline hdr fn a = trace (hdr ++ "\n" ++ fn a) a
+
+showAllChords :: (Symmable a) => ChordSheet a -> String
+showAllChords   = unlines . map chordToSym . chordsInSheet
+summarizeChords ::  (Symmable a, Eq a, Ord a) => ChordSheet a -> String
+summarizeChords = unlines . map chordToSym . sort . nub . chordsInSheet  
 
 romanizeSheet :: ChordSheet Note -> ChordSheet RomanNote
-romanizeSheet cs = traceShow key $ withEachChordInSheet (romanizeInKey key) cs
+romanizeSheet cs = withEachChordInSheet (romanizeInKey key) cs
   where key = guessKey cs
 
 guessKey :: ChordSheet Note -> Key -- TODO: return probability, or perhaps alternatives
