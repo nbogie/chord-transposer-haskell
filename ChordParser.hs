@@ -18,7 +18,6 @@ main :: IO ()
 
 main    = do
   tests
-  -- parseAndPrint (unwords sampleInputs)
   return ()
 
 main2 :: IO ()
@@ -116,24 +115,6 @@ pQuality = do
 
 
 
-sampleInputs :: [String]
-sampleInputs = 
-  [ "A"
-  , "A#7-9"
-  , "Aaug"
-  , "A9"
-  , "Bbm7"
-  , "Ab"
-  , "F#dim"
-  , "A/F#"
-  , "Am"
-  , "Am7"
-  , "AM7"
-  , "Gsus2"
-  , "Gsus4"
-  , "A#m7-5"
-  , "Am/C"
-  ]
 
 
 -- tests = runTestTT $ TestList [ 4 ~=? 10 ]
@@ -148,6 +129,7 @@ tests = runTestTT $ TestList $ map testIt testData
 initChord :: Note -> ChordQuality -> Chord
 initChord n color = Chord { rootNote = n, bassNote = Nothing, cQuality = color, cDecorations = [] }
 
+-- conveniences for qualities
 maj = CCMajor
 mnr = CCMinor
 aug = CCAugmented
