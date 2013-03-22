@@ -159,6 +159,7 @@ testData =
   , ("F7#5#9"  , crd F      maj `with` ["7", "#5", "#9"])
   ] 
   where crd = initChord
+
 unsupportedTestData = 
   [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
@@ -167,6 +168,13 @@ unsupportedTestData =
   , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
   , ("E7(b9)", crd E      maj `with` ["7", "b9"])
   , ("A-Maj7", crd A      mnr `with` ["Maj7"]   )
+  -- we can't even represent these yet.  we lose the fact they've been specified with an interval for the bass, rather than an absolute.  This could be a printing preference, but we'd lose whether they specified sharp fifth or flat sixth.
+  , ("A7/+5" , crd A      maj `on` F     `with` ["7"]      )
+  , ("A7/-9" , crd A      maj `on` BFlat `with` ["7"]      )
+  , ("Am7/+5", crd A      mnr `on` F     `with` ["7"]      )
+  , ("Am7/-5", crd A      mnr `on` EFlat `with` ["7"]      )
+  , ("Am7/6" , crd A      mnr `on` GFlat `with` ["7"]      )
+  , ("Am7/9" , crd A      mnr `on` B     `with` ["7"]      )
   ]
   where crd = initChord
 
