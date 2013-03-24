@@ -68,7 +68,7 @@ pDecoration :: Parser String
 pDecoration = 
        string "7" <|> string "M7" <|> 
        string "6" <|> string "9" <|> try (string "11") <|> try (string "13") <|> 
-       try (string "sus2") <|> string "sus4" <|> 
+       try (string "sus2") <|> try (string "sus4") <|> string "sus" <|>  -- sus is sus4. normalise?
        try (string "-5") <|> string "-9" <|>
        try (string "#5") <|> string "#9" 
 
@@ -151,7 +151,7 @@ testData =
   , ("AM7"   , crd A      maj `with` ["M7"]     )
   , ("Gsus2" , crd G      maj `sus` 2           )
   , ("Gsus4" , crd G      maj `sus` 4           )
-  , ("Gsus9" , crd G      maj `sus` 4 `with` ["9"] )
+  , ("Gsus9" , crd G      maj `with` ["sus", "9"] ) -- we don't try to change their writing style to sus4
   , ("G7sus4/D", crd G    maj `with` ["7"] `sus` 4 `on` D   )
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
