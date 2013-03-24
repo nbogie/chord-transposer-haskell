@@ -59,6 +59,20 @@ pChord = do
   bn <- pSlashBassNote <|> return Nothing
   return $ Chord r bn c ds
 
+-- m (not followed by an a for "maj") (peeking - don't consume)
+-- or "dim"
+-- Ca could be Caug... or Cadd...
+-- anything else is major
+pQuality :: Parser ChordQuality
+pQuality = do
+  s <- string "dim" <|>try (string "aug") <|> string "+" <|> string "m" <|> return ""
+  return $ case s of
+            "dim" -> CCDiminished
+            "aug" -> CCAugmented
+            "+"   -> CCAugmented
+            "m"   -> CCMinor
+            _     -> CCMajor
+
 pDecoration :: Parser String
 pDecoration = 
        string "7"    <|> 
@@ -120,20 +134,7 @@ pNote = do
     "G#" -> GSharp
     other -> error $ "BUG: pNote: unrecognised reformed note " ++ other
 
--- m (not followed by an a for "maj") (peeking - don't consume)
--- or "dim"
--- Ca could be Caug... or Cadd...
--- anything else is major
 
-pQuality :: Parser ChordQuality
-pQuality = do
-  s <- string "dim" <|>try (string "aug") <|> string "+" <|> string "m" <|> return ""
-  return $ case s of
-            "dim" -> CCDiminished
-            "aug" -> CCAugmented
-            "+"   -> CCAugmented
-            "m"   -> CCMinor
-            _     -> CCMajor
 tests       = testASet testData
 futureTests = testASet unsupportedTestData
 
@@ -164,80 +165,77 @@ on   baseChord bNote       = baseChord { bassNote = Just bNote }
 
 
 testData = 
-  [ ("A"     , crd A      maj                   )
-  , ("A#7-9" , crd ASharp maj `with` ["7","-9"] )
-  , ("Aaug"  , crd A      aug                   )
-  , ("A9"    , crd A      maj `with` ["9"]      )
-  , ("Bbm7"  , crd BFlat  mnr `with` ["7"]      )
-  , ("Ab"    , crd AFlat  maj                   )
-  , ("F#dim" , crd FSharp dim                   )
-  , ("F#dim9", crd FSharp dim `with` ["9"]      )
-  , ("F#dim9/A", crd FSharp dim `on` A `with` ["9"] )
-  , ("A/F#"  , crd A      maj `on` FSharp       )
-  , ("Am"    , crd A      mnr                   ) 
-  , ("Am6"   , crd A      mnr `with` ["6"]      )
-  , ("Am7"   , crd A      mnr `with` ["7"]      )
-  , ("AM7"   , crd A      maj `with` ["M7"]     )
-  , ("Gsus2" , crd G      maj `sus` 2           )
-  , ("Gsus4" , crd G      maj `sus` 4           )
-  , ("Gsus9" , crd G      maj `with` ["sus", "9"] ) -- we don't try to change their writing style to sus4
-  , ("G7sus4/D", crd G    maj `with` ["7"] `sus` 4 `on` D   )
-  , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
-  , ("Am/C"  , crd A      mnr `on` C            )
-  , ("C+"    , crd C      aug                   )
-  , ("F7#5#9", crd F      maj `with` ["7", "#5", "#9"])
-  , ("Cadd2" , crd C      maj `with` ["add2"]   )
-  , ("Cadd9" , crd C      maj `with` ["add9"]   )
-  , ("C7add13", crd C      maj `with` ["7", "add13"]   ) -- indicates no 9th or 11th (not that we care).
-  , ("C5"    , crd C      maj `with` ["5"]   )
-  , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
-  , ("GM9"   , crd G      maj `with` ["M9"]     )
+  [ ("A"         , crd A      maj                                 )
+  , ("A#7-9"     , crd ASharp maj `with` ["7","-9"]               )
+  , ("Aaug"      , crd A      aug                                 )
+  , ("A9"        , crd A      maj `with` ["9"]                    )
+  , ("Bbm7"      , crd BFlat  mnr `with` ["7"]                    )
+  , ("Ab"        , crd AFlat  maj                                 )
+  , ("F#dim"     , crd FSharp dim                                 )
+  , ("F#dim9"    , crd FSharp dim `with` ["9"]                    )
+  , ("F#dim9/A"  , crd FSharp dim `with` ["9"]         `on` A     )
+  , ("A/F#"      , crd A      maj                      `on` FSharp)
+  , ("Am"        , crd A      mnr                                 ) 
+  , ("Am6"       , crd A      mnr `with` ["6"]                    )
+  , ("Am7"       , crd A      mnr `with` ["7"]                    )
+  , ("AM7"       , crd A      maj `with` ["M7"]                   )
+  , ("Gsus2"     , crd G      maj `sus` 2                         )
+  , ("Gsus4"     , crd G      maj `sus` 4                         )
+  , ("Gsus9"     , crd G      maj `with` ["sus", "9"]             ) -- we don't try to change their writing style to sus4
+  , ("G7sus4/D"  , crd G      maj `with` ["7"] `sus` 4 `on` D     )
+  , ("A#m7-5"    , crd ASharp mnr `with` ["7","-5"]               )
+  , ("Am/C"      , crd A      mnr                      `on` C     )
+  , ("C+"        , crd C      aug                                 )
+  , ("F7#5#9"    , crd F      maj `with` ["7", "#5", "#9"]        )
+  , ("Cadd2"     , crd C      maj `with` ["add2"]                 )
+  , ("Cadd9"     , crd C      maj `with` ["add9"]                 )
+  , ("C7add13"   , crd C      maj `with` ["7", "add13"]           ) -- indicates no 9th or 11th (not that we care).
+  , ("C5"        , crd C      maj `with` ["5"]                    )
+  , ("AMaj7"     , crd A      maj `with` ["Maj7"]                 )
+  , ("GM9"       , crd G      maj `with` ["M9"]                   )
   -- these are strange - I think they're not indicating a bass note, just using slash as a separator between details
   -- we don't care for current purposes.
-  , ("A7/+5" , crd A      maj `with` ["7", "/+5"]      )
-  , ("A7/-9" , crd A      maj `with` ["7", "/-9"]      )
-  , ("Am7/+5", crd A      mnr `with` ["7", "/+5"]   )
-  , ("Am7/-5", crd A      mnr `with` ["7", "/-5"]   )
+  , ("A7/+5"     , crd A      maj `with` ["7", "/+5"]             )
+  , ("A7/-9"     , crd A      maj `with` ["7", "/-9"]             )
+  , ("Am7/+5"    , crd A      mnr `with` ["7", "/+5"]             )
+  , ("Am7/-5"    , crd A      mnr `with` ["7", "/-5"]             )
 
-  , ("A6/9"  , crd A      maj `with` ["6", "/9"]    ) -- quite different from A7/C#
-  , ("Am7/6" , crd A      mnr `with` ["7", "/6"]    )
-  , ("Am7/9" , crd A      mnr `with` ["7", "/9"]    )
+  , ("A6/9"      , crd A      maj `with` ["6", "/9"]              ) -- quite different from A7/C#
+  , ("Am7/6"     , crd A      mnr `with` ["7", "/6"]              )
+  , ("Am7/9"     , crd A      mnr `with` ["7", "/9"]              )
 
   -- Suspicious of these, they're all from http://chordlist.brian-amberg.de/en/guitar/standard/C/
   -- I haven't seen them in the wild.  No harm in supporting them, though.
-  , ("C11dim9"  , crd C maj `with` ["11", "dim9"] )
-  , ("Cm11dim9" , crd C mnr `with` ["11", "dim9"] )
-  , ("C13dim11" , crd C maj `with` ["13", "dim11"])
-  , ("Cm13dim11", crd C mnr `with` ["13", "dim11"])
-  , ("C13dim9"  , crd C maj `with` ["13", "dim9"] )
-  , ("Cm13dim9" , crd C mnr `with` ["13", "dim9"] )
-  , ("C6dim5"   , crd C maj `with` ["6", "dim5"]  )
-  , ("C7dim5"   , crd C maj `with` ["7", "dim5"]  )
-  , ("Cm7dim5"  , crd C mnr `with` ["7", "dim5"]  )
-  , ("C7dim9"   , crd C maj `with` ["7", "dim9"]  )
-  , ("Cm7dim9"  , crd C mnr `with` ["7", "dim9"]  )
-  , ("C9dim5"   , crd C maj `with` ["9", "dim5"]  )
-  , ("Cmdim9"   , crd C mnr `with` ["dim9"]       )
-  , ("Cmdim11"  , crd C mnr `with` ["dim11"]      )
-  , ("Cmdim13"  , crd C mnr `with` ["dim13"]      )
+  , ("C11dim9"   , crd C      maj `with` ["11", "dim9"]           )
+  , ("Cm11dim9"  , crd C      mnr `with` ["11", "dim9"]           )
+  , ("C13dim11"  , crd C      maj `with` ["13", "dim11"]          )
+  , ("Cm13dim11" , crd C      mnr `with` ["13", "dim11"]          )
+  , ("C13dim9"   , crd C      maj `with` ["13", "dim9"]           )
+  , ("Cm13dim9"  , crd C      mnr `with` ["13", "dim9"]           )
+  , ("C6dim5"    , crd C      maj `with` ["6", "dim5"]            )
+  , ("C7dim5"    , crd C      maj `with` ["7", "dim5"]            )
+  , ("Cm7dim5"   , crd C      mnr `with` ["7", "dim5"]            )
+  , ("C7dim9"    , crd C      maj `with` ["7", "dim9"]            )
+  , ("Cm7dim9"   , crd C      mnr `with` ["7", "dim9"]            )
+  , ("C9dim5"    , crd C      maj `with` ["9", "dim5"]            )
+  , ("Cmdim9"    , crd C      mnr `with` ["dim9"]                 )
+  , ("Cmdim11"   , crd C      mnr `with` ["dim11"]                )
+  , ("Cmdim13"   , crd C      mnr `with` ["dim13"]                )
   ] 
   where crd = initChord
 
+
 unsupportedTestData = 
-  [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord quality not the seventh.
-  , ("Bb-/F" , crd BFlat  mnr `on` F            )
-
-  -- can't do these yet - confusion with major seventh
-  -- Amaj7
-  -- Amaj7/G
-
-  , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
-  , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
-  , ("E7(b9)", crd E      maj `with` ["7", "b9"]) -- parens
-  , ("Cmmaj7", crd C      mnr `with` ["maj7"]   )
-  , ("A-Maj7", crd A      mnr `with` ["Maj7"]   )
-
-  , ("Cadd2*", crd C      maj `with` ["add2*"]   ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
+  [ ("Bb-7"      , crd BFlat  mnr `with` ["7"]                    ) -- the minus applies to the chord quality not the seventh.
+  , ("Bb-/F"     , crd BFlat  mnr                      `on` F     )
+  , ("A-Maj7"    , crd A      mnr `with` ["Maj7"]                 )
+  , ("A-(Maj7)"  , crd A      mnr `with` ["Maj7"]                 ) -- parens
+  , ("A-(#5)"    , crd A      mnr `with` ["#5"]                   )
+  , ("E7(b9)"    , crd E      maj `with` ["7", "b9"]              )
+  , ("Amaj7"     , crd A      maj `with` ["7"]                    )-- can't do these yet - confusion with major seventh and minor quality
+  , ("Amaj7/G"   , crd A      maj `with` ["7"]                    ) 
+  , ("Cmmaj7"    , crd C      mnr `with` ["maj7"]                 )
+  , ("Cadd2*"    , crd C      maj `with` ["add2*"]                ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
   ]
   where crd = initChord
 
