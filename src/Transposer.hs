@@ -54,8 +54,7 @@ keyFromFirstChord cs = fmap keyFromChord firstChord
 keyFromChord :: Chord Note -> Key
 keyFromChord c = (rn, MajorScale)
   where rn = (if cQuality c == CCMinor then relativeMajor else id) $ rootNote c
-
-relativeMajor n = upSemitones n 3
+        relativeMajor = upSemitones 3
 
 chordQualityToKeyType CCMinor = MinorScale
 chordQualityToKeyType CCMajor = MajorScale
@@ -94,8 +93,8 @@ transposeChordSheet :: Transposition -> ChordSheet Note -> ChordSheet Note
 transposeChordSheet trans = withEachChordInSheet (transposeChord trans)
 
 transposeChord ::  Int -> Chord Note -> Chord Note
-transposeChord trans c = c { rootNote = upSemitones (rootNote c) trans
-                           , bassNote = fmap (`upSemitones` trans) (bassNote c) 
+transposeChord trans c = c { rootNote = upSemitones trans (rootNote c)
+                           , bassNote = fmap (upSemitones trans) (bassNote c) 
                            }
 
 printChordSheet :: (Symmable a) => ChordSheet a -> String

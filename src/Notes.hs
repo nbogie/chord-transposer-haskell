@@ -23,8 +23,8 @@ instance Interval Seventh where
   semitones  MajorSeventh  =  11
 
 -- TODO: this needs an enumerable instance of Note which can wrap around
-upSemitones :: Note -> Int -> Note
-upSemitones n i = fromPure $ toEnum tag
+upSemitones :: Int -> Note -> Note
+upSemitones i n = fromPure $ toEnum tag
   where tag = (fromEnum (toPure n) + i) `mod` 12
 
 -- Question: how to modify the already derived Enum of PureNote to cycle from top note to bottom note?
