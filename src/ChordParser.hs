@@ -1,12 +1,17 @@
+-- avoid: Warning: orphan instance: instance Eq ParseError
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module ChordParser where
 
+-- import Debug.Trace
 import Text.ParserCombinators.Parsec
+import Text.ParserCombinators.Parsec.Error(errorMessages)
 
-import Notes
 
 import Test.HUnit
 -- http://www.haskell.org/haskellwiki/HUnit_1.0_User%27s_Guide#Getting_Started
 
+import Notes
 
 -- This could be useful as the core of a service which could take any ascii sheet music and change key
 -- or re-write relative to the root, using roman numerals (to analyze progressions more purely).
@@ -40,7 +45,6 @@ parseStringToChord xs = case parse pChord ("Input: "++xs) xs of
                           Left err -> Left $ show err
                           Right c -> Right c
 
--- can't get this to terminate correctly - eof is always unexpected
 pChordLines :: Parser [[Chord Note]]
 pChordLines = do 
   cs <- endBy pChords newline
@@ -51,7 +55,6 @@ pChords :: Parser [Chord Note]
 pChords = sepBy pChord spaces
 
 pChord :: Parser (Chord Note)
--- Root [m | maj7] [dim] [7] [9] [-5 (secondary decorations)]        [/BassNote]
 pChord = do
   r <- pNote
   c <- pQuality
@@ -59,29 +62,33 @@ pChord = do
   bn <- pSlashBassNote <|> return Nothing
   return $ Chord r bn c ds
 
--- m (not followed by an a for "maj") (peeking - don't consume)
--- or "dim"
--- Ca could be Caug... or Cadd...
--- anything else is major
+-- Ca.. could be Caug... or Cadd...
+-- Cm.. could be Cm... or Cmaj...
+-- major quality is generally not stated
 pQuality :: Parser ChordQuality
 pQuality = do
-  s <- string "dim" <|>try (string "aug") <|> string "+" <|> string "m" <|> return ""
+  s <- string "dim" <|>try (string "aug") <|> string "+" <|> try mNotGreedily <|> return ""
   return $ case s of
             "dim" -> CCDiminished
             "aug" -> CCAugmented
             "+"   -> CCAugmented
             "m"   -> CCMinor
             _     -> CCMajor
+  where
+   -- we want m for minor in Cm but don't want to eat the m from Cmaj7
+   mNotGreedily = do{ m <- char 'm' ; notFollowedBy (char 'a'); return [m] }
 
 pDecoration :: Parser String
 pDecoration = 
        string "7"    <|> 
        try (do; m <- string "M"; i <- pInterval; return (m ++ i) ) <|> 
        string "Maj7" <|> 
+       string "maj7" <|> 
        pInterval     <|> 
        pSuspended    <|>
        try (do; a <- string "add"; i <- pInterval; return (a ++ i) ) <|> 
-       try (string "+5") <|> string "+9" <|> -- confusion with aug (C+)
+       -- TODO: just make this a generic pModifiedInterval
+       try (string "+5") <|> string "+9" <|> -- confusion with aug (C+) ?
        try (string "-5") <|> string "-9" <|>
        try (string "b5") <|> string "b9" <|>
        try (string "#5") <|> string "#9" <|>
@@ -96,6 +103,7 @@ pDecoration =
       d <- string "dim"
       i <- pInterval
       return (d++i)
+
     pSlashInterval :: Parser String
     pSlashInterval = do
       sl     <- string "/"
@@ -135,10 +143,18 @@ pNote = do
     other -> error $ "BUG: pNote: unrecognised reformed note " ++ other
 
 
-tests       = testASet testData
-futureTests = testASet unsupportedTestData
+instance Eq ParseError where
+  a == b = errorMessages a == errorMessages b
 
-testASet testSet = runTestTT $ TestList $ map testIt testSet
+testPQuality = TestList 
+  [ "maj should fail to parse as quality" ~: Right CCMajor ~=? parse pQuality "" "maj"
+  , "m   should parse as quality"         ~: Right CCMinor ~=? parse pQuality "" "m"
+  ]
+
+tests       = runTestTT $ TestList [ testPQuality, testFromSet testData ]
+futureTests = runTestTT $ TestList [ testFromSet unsupportedTestData ]
+
+testFromSet testSet = TestList $ map testIt testSet
   where 
     testIt :: (String, Chord Note) -> Test
     testIt (inp, expected) = ("When input is " ++ inp) ~: 
@@ -175,6 +191,9 @@ testData =
   , ("F#dim9"    , crd FSharp dim `with` ["9"]                    )
   , ("F#dim9/A"  , crd FSharp dim `with` ["9"]         `on` A     )
   , ("A/F#"      , crd A      maj                      `on` FSharp)
+  , ("Amaj7"     , crd A      maj `with` ["maj7"]                 )
+  , ("Amaj7/G"   , crd A      maj `with` ["maj7"]      `on` G     ) 
+  , ("Cmmaj7"    , crd C      mnr `with` ["maj7"]                 )
   , ("Am"        , crd A      mnr                                 ) 
   , ("Am6"       , crd A      mnr `with` ["6"]                    )
   , ("Am7"       , crd A      mnr `with` ["7"]                    )
@@ -193,8 +212,10 @@ testData =
   , ("C5"        , crd C      maj `with` ["5"]                    )
   , ("AMaj7"     , crd A      maj `with` ["Maj7"]                 )
   , ("GM9"       , crd G      maj `with` ["M9"]                   )
-  -- these are strange - I think they're not indicating a bass note, just using slash as a separator between details
-  -- we don't care for current purposes.
+
+  -- These are strange - I think they're not indicating a bass note,
+  --   they're just using slash as a separator between details.
+  -- We don't care for current purposes.
   , ("A7/+5"     , crd A      maj `with` ["7", "/+5"]             )
   , ("A7/-9"     , crd A      maj `with` ["7", "/-9"]             )
   , ("Am7/+5"    , crd A      mnr `with` ["7", "/+5"]             )
@@ -224,7 +245,6 @@ testData =
   ] 
   where crd = initChord
 
-
 unsupportedTestData = 
   [ ("Bb-7"      , crd BFlat  mnr `with` ["7"]                    ) -- the minus applies to the chord quality not the seventh.
   , ("Bb-/F"     , crd BFlat  mnr                      `on` F     )
@@ -232,9 +252,6 @@ unsupportedTestData =
   , ("A-(Maj7)"  , crd A      mnr `with` ["Maj7"]                 ) -- parens
   , ("A-(#5)"    , crd A      mnr `with` ["#5"]                   )
   , ("E7(b9)"    , crd E      maj `with` ["7", "b9"]              )
-  , ("Amaj7"     , crd A      maj `with` ["7"]                    )-- can't do these yet - confusion with major seventh and minor quality
-  , ("Amaj7/G"   , crd A      maj `with` ["7"]                    ) 
-  , ("Cmmaj7"    , crd C      mnr `with` ["maj7"]                 )
   , ("Cadd2*"    , crd C      maj `with` ["add2*"]                ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
   ]
   where crd = initChord
