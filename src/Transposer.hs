@@ -11,25 +11,29 @@ import Utils (bool)
 import Data.Maybe (listToMaybe, fromMaybe)
 
 main :: IO ()
-main = tests >> transposeStdin 0 True-- flag is to romanize 
+main = tests >> transposeStdin PlainText 0 True-- flag is to romanize 
+
+type Pos = Int
+
+type Transposition = Int
 
 data ChordSheet a = ChordSheet {csLines :: [ChordSheetLine a]} deriving (Show)
 
 data ChordSheetLine a = ChordSheetLine {cslItems :: [ChordSheetItem a], 
                                         cslOrigText :: String} deriving (Show)
 
-type ChordSheetItem a = (Either String (Chord a), (String, Int))
+type ChordSheetItem a = (Either String (Chord a), (String, Pos))
 
 -- currently, a chord sheet may have many "chords" optimistically partially parsed.
 -- Ignore these by asking only for the chords from lines that look like chords
 chordsInSheet ::  ChordSheet a -> [Chord a]
 chordsInSheet = rights . map fst . concatMap cslItems . filter lineLooksLikeChords . csLines
 
-transposeStdin :: Transposition -> Bool -> IO () 
-transposeStdin amt formatAsRoman = 
-    interact $ bool (printChordSheet . romanizeSheet) 
-                     (printChordSheet . id)
-                     formatAsRoman 
+transposeStdin :: PrintFormat -> Transposition -> Bool -> IO () 
+transposeStdin format amt shouldRomanize = 
+    interact $ bool (printChordSheet format . romanizeSheet) 
+                     (printChordSheet format . id)
+                     shouldRomanize 
                . transposeChordSheet amt . traceInline "chord summary" summarizeChords . parseChordSheet
 
 traceInline ::  String -> (a -> String) -> a -> a
@@ -77,9 +81,7 @@ withOneCSLI f (c,z)       = (fmap f c, z)
 
 transposeChordSheetStr :: Transposition -> String -> String
 transposeChordSheetStr amt = 
-    printChordSheet . transposeChordSheet amt . parseChordSheet
-
-type Transposition = Int
+    printChordSheet PlainText . transposeChordSheet amt . parseChordSheet
 
 parseChordSheet :: String -> ChordSheet Note
 parseChordSheet input = ChordSheet $ map parseChordSheetLine (lines input)
@@ -93,18 +95,22 @@ parseChordSheetLine line = ChordSheetLine (map buildItem posns) line
 transposeChordSheet :: Transposition -> ChordSheet Note -> ChordSheet Note
 transposeChordSheet trans = withEachChordInSheet (transposeChord trans)
 
-transposeChord ::  Int -> Chord Note -> Chord Note
+transposeChord ::  Transposition -> Chord Note -> Chord Note
 transposeChord trans c = c { rootNote = upSemitones trans (rootNote c)
                            , bassNote = fmap (upSemitones trans) (bassNote c) 
                            }
 
-printChordSheet :: (Symmable a) => ChordSheet a -> String
-printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
+printChordSheet :: (Symmable a) => PrintFormat -> ChordSheet a -> String
+printChordSheet PlainText ls  = unlines $ map (printChordSheetLine PlainText) (csLines ls)
+printChordSheet TaggedText ls = prependStylesheet $ wrapInPre $unlines $ map (printChordSheetLine TaggedText) (csLines ls)
+  where 
+    wrapInPre text = "<pre>" ++ text ++ "</pre"
+    prependStylesheet text = "<style>span { color : red; font-weight: bold}</style>" ++ text
 
-printChordSheetLine :: (Symmable a) => ChordSheetLine a -> String
-printChordSheetLine line@(ChordSheetLine items orig) = 
+printChordSheetLine :: (Symmable a) => PrintFormat -> ChordSheetLine a -> String
+printChordSheetLine format line@(ChordSheetLine items orig) = 
   if lineLooksLikeChords line
-    then printCSIsAtPositions items
+    then printCSIsAtPositions format items
     else orig
 
 -- Todo: Improve decision-making over whether a line is chords or not.
@@ -120,22 +126,39 @@ lineLooksLikeChords (ChordSheetLine items orig) =
 
 lineContainsKeywords str = any (\kw -> any (isPrefixOf kw . lower) (words str)) keywords
   where
-    keywords = map (map toLower) ["Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
+    keywords = map (map toLower) ["Instr", "Break", "Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
     lower = map toLower
 
-printCSIsAtPositions :: (Symmable a) => [ChordSheetItem a] -> String
-printCSIsAtPositions items = 
-  printStringsAtPositions $ map f items
-  where f (Left _, (text, pos)) = (text, pos)
-        f (Right c, (_, pos))   = (chordToSym c, pos)
+data PrintFormat = TaggedText | PlainText deriving (Show, Eq)
 
-printStringsAtPositions :: [(String, Int)] -> String
-printStringsAtPositions = foldl' f ""
-  where f acc (word, pos) = acc ++ replicate padLen ' ' ++ word
-          where padLen = if pos == 0
+printCSIsAtPositions :: (Symmable a) => PrintFormat-> [ChordSheetItem a] -> String
+printCSIsAtPositions printFormat items = 
+  printStringsAtPositions printFormat $ map f items
+  where f (Left _, (text, pos)) = (PlainElem, text, pos)
+        f (Right c, (_, pos))   = (ChordElem, chordToSym c, pos)
+
+data MarkupElement = PlainElem | ChordElem deriving (Show, Eq)
+
+
+printStringsAtPositions :: PrintFormat -> [(MarkupElement, String, Pos)] -> String
+printStringsAtPositions TaggedText = snd. generateTextAndHTML
+printStringsAtPositions PlainText = fst . generateTextAndHTML
+
+type HtmlString  = String
+type PlainString = String
+generateTextAndHTML ::  [(MarkupElement, String, Pos)] -> (PlainString, HtmlString)
+generateTextAndHTML = foldl' f ("","")
+  where 
+        f :: (PlainString,HtmlString) -> (MarkupElement, String, Pos) -> (PlainString, HtmlString)
+        f (accText,accHtml) (elemType, word, pos) = (text, html)
+          where text = accText ++ replicate padLen ' ' ++ word
+                html = accHtml ++ replicate padLen ' ' ++ spanIt elemType word 
+                padLen = if pos == 0
                          then 0
-                         else max 1 (pos - length acc)
-
+                         else max 1 (pos - length accText)
+                spanIt PlainElem x = "" ++ x ++ ""
+                spanIt ChordElem x = "<span class='pc'>" ++ x ++ "</span>"
+         
 tests = runTestTT $ TestList [printStringsTests, romanizeTests]
 
 romanizeTests = TestList 
@@ -168,6 +191,6 @@ testRomanizationInKey keyRoot keyScale (inp, expectedSym) =
   
 printStringsTests = TestList 
   [ 4 ~=? 2+2
-  , "Hi" ~=? printStringsAtPositions [("Hi", 0)] -- no initial padding
-  , " Foo" ~=? printStringsAtPositions [("Foo", 1)] -- but original leading whitespace should be preserved
+  , "Hi" ~=? printStringsAtPositions PlainText [(ChordElem, "Hi", 0)] -- no initial padding
+  , " Foo" ~=? printStringsAtPositions PlainText [(ChordElem, "Foo", 1)] -- but original leading whitespace should be preserved
   ]
