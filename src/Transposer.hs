@@ -94,8 +94,9 @@ transposeChordSheet :: Transposition -> ChordSheet Note -> ChordSheet Note
 transposeChordSheet trans = withEachChordInSheet (transposeChord trans)
 
 transposeChord ::  Int -> Chord Note -> Chord Note
-transposeChord trans c = c{rootNote = upSemitones (rootNote c) trans, bassNote = newBassNote}
- where newBassNote = fmap (`upSemitones` trans) (bassNote c)
+transposeChord trans c = c { rootNote = upSemitones (rootNote c) trans
+                           , bassNote = fmap (`upSemitones` trans) (bassNote c) 
+                           }
 
 printChordSheet :: (Symmable a) => ChordSheet a -> String
 printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
