@@ -50,10 +50,6 @@ pChordLines = do
 pChords :: Parser [Chord Note]
 pChords = sepBy pChord spaces
 
--- can't do these yet - confusion with major seventh
--- Amaj7
--- Amaj7/G
-
 pChord :: Parser (Chord Note)
 -- Root [m | maj7] [dim] [7] [9] [-5 (secondary decorations)]        [/BassNote]
 pChord = do
@@ -75,12 +71,17 @@ pDecoration =
        try (string "-5") <|> string "-9" <|>
        try (string "b5") <|> string "b9" <|>
        try (string "#5") <|> string "#9" <|>
-       try pSlashInterval 
+       try pSlashInterval <|>
+       pDimInterval
   where
     -- sus is common, means sus4.
     pSuspended :: Parser String
     pSuspended = try (string "sus2") <|> try (string "sus4") <|> string "sus"
 
+    pDimInterval = do
+      d <- string "dim"
+      i <- pInterval
+      return (d++i)
     pSlashInterval :: Parser String
     pSlashInterval = do
       sl     <- string "/"
@@ -170,6 +171,8 @@ testData =
   , ("Bbm7"  , crd BFlat  mnr `with` ["7"]      )
   , ("Ab"    , crd AFlat  maj                   )
   , ("F#dim" , crd FSharp dim                   )
+  , ("F#dim9", crd FSharp dim `with` ["9"]      )
+  , ("F#dim9/A", crd FSharp dim `on` A `with` ["9"] )
   , ("A/F#"  , crd A      maj `on` FSharp       )
   , ("Am"    , crd A      mnr                   ) 
   , ("Am6"   , crd A      mnr `with` ["6"]      )
@@ -199,29 +202,34 @@ testData =
   , ("A6/9"  , crd A      maj `with` ["6", "/9"]    ) -- quite different from A7/C#
   , ("Am7/6" , crd A      mnr `with` ["7", "/6"]    )
   , ("Am7/9" , crd A      mnr `with` ["7", "/9"]    )
+
+  -- Suspicious of these, they're all from http://chordlist.brian-amberg.de/en/guitar/standard/C/
+  -- I haven't seen them in the wild.  No harm in supporting them, though.
+  , ("C11dim9"  , crd C maj `with` ["11", "dim9"] )
+  , ("Cm11dim9" , crd C mnr `with` ["11", "dim9"] )
+  , ("C13dim11" , crd C maj `with` ["13", "dim11"])
+  , ("Cm13dim11", crd C mnr `with` ["13", "dim11"])
+  , ("C13dim9"  , crd C maj `with` ["13", "dim9"] )
+  , ("Cm13dim9" , crd C mnr `with` ["13", "dim9"] )
+  , ("C6dim5"   , crd C maj `with` ["6", "dim5"]  )
+  , ("C7dim5"   , crd C maj `with` ["7", "dim5"]  )
+  , ("Cm7dim5"  , crd C mnr `with` ["7", "dim5"]  )
+  , ("C7dim9"   , crd C maj `with` ["7", "dim9"]  )
+  , ("Cm7dim9"  , crd C mnr `with` ["7", "dim9"]  )
+  , ("C9dim5"   , crd C maj `with` ["9", "dim5"]  )
+  , ("Cmdim9"   , crd C mnr `with` ["dim9"]       )
+  , ("Cmdim11"  , crd C mnr `with` ["dim11"]      )
+  , ("Cmdim13"  , crd C mnr `with` ["dim13"]      )
   ] 
   where crd = initChord
 
 unsupportedTestData = 
-  [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
+  [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord quality not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
 
-
-  , ("C11dim9", crd C  maj `with` ["11", "dim9"]  )  -- C11dim9
-  , ("Cm11dim9", crd C  mnr `with` ["11", "dim9"]  )  -- m11dim9
-  , ("C13dim11", crd C maj `with`   ["13", "dim11"])
-  , ("Cm13dim11", crd C mnr `with`  ["13", "dim11"] )
-  , ("C13dim9", crd C maj `with`  ["13", "dim9"])
-  , ("Cm13dim9", crd C mnr `with`  ["13", "dim9"] )
-  , ("C6dim5", crd C maj `with`  ["6", "dim5"] )
-  , ("C7dim5", crd C maj `with`  ["7", "dim6"] )
-  , ("Cm7dim5", crd C mnr `with` ["7", "dim5"]  )
-  , ("C7dim9", crd C maj `with` ["7", "dim9"]  )
-  , ("Cm7dim9", crd C mnr `with` ["7", "dim9"]  )
-  , ("C9dim5", crd C maj `with` ["dim5"]  )
-  , ("Cmdim9", crd C mnr `with` ["dim9"]  )
-  , ("Cmdim11", crd C mnr `with` ["dim11"]  )
-  , ("Cmdim13", crd C mnr `with` ["dim13"]  )
+  -- can't do these yet - confusion with major seventh
+  -- Amaj7
+  -- Amaj7/G
 
   , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
   , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
