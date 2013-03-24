@@ -145,7 +145,7 @@ testASet testSet = runTestTT $ TestList $ map testIt testSet
 
 -- TEST CONVENIENCES
 initChord :: (Symmable a) => a -> ChordQuality -> Chord a 
-initChord n color = Chord { rootNote = n, bassNote = Nothing, cQuality = color, cDecorations = [] }
+initChord n qual = Chord { rootNote = n, bassNote = Nothing, cQuality = qual, cDecorations = [] }
 
 -- conveniences for qualities
 maj = CCMajor

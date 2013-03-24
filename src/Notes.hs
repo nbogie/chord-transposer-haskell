@@ -52,14 +52,14 @@ chordToSym Chord{bassNote = bn, rootNote = rn, cQuality = qual, cDecorations  = 
                then noteToSymForMinorChord rn
                else noteToSym rn
       qualSym = if reflectsQuality rn && isMinorQuality qual
-                  then "" else colorToSym qual 
+                  then "" else qualityToSym qual 
   in rnSym ++ qualSym ++ concat decs ++ slashBass
 
-colorToSym :: ChordQuality -> String
-colorToSym CCMajor = ""
-colorToSym CCMinor = "m"
-colorToSym CCDiminished = "dim"
-colorToSym CCAugmented = "aug"
+qualityToSym :: ChordQuality -> String
+qualityToSym CCMajor = ""
+qualityToSym CCMinor = "m"
+qualityToSym CCDiminished = "dim"
+qualityToSym CCAugmented = "aug"
 
 data RomanNote = I | IIFlat | II | IIIFlat | III | IV | VFlat | V | VIFlat | VI | VIIFlat | VII deriving (Eq, Show, Ord)
 
