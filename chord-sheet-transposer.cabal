@@ -61,3 +61,5 @@ executable        chord-sheet-transposer
     , HUnit >= 1.2.0.0
     , bytestring >= 0.9.1.7
     , containers >= 0.4.2.0
+
+  ghc-options: -Wall -fno-warn-missing-signatures
