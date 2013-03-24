@@ -1,22 +1,27 @@
 * TODO: collect and summarise all chords encountered (e.g. show all guitar chords, or talk about the likely (or confirmed) key and their name and harmonic function within it).
-* TODO: add support for C- where we only have Cm currently.
+* add structured output (json?) including whether a chord was parsed, what part of it wasn't.  typed first, then json.
+* TODO: add support for C- where we only have Cm currently.  Drive with examples.
 I think when outputting the chords we have to preserve the notation type, so after transposing "C-", we need to say "D-" not "Dm".
 * Note we don't really need min/maj/dim/aug parsed out of a string in order to transpose, though it is definitely helpful in key recognition and harmonic function.
 * TODO: different chords have different parse rules.  Consider applying completely different parsers to each chord and then deciding which gives the best result (most completely parsed, perhaps, but avoiding key-contextual).
 
  * report if any chord line was partially parsed - warns user about likely errors.  this is key to useability - we will ALWAYS have parse errors, even just from human mistakes in the input.
  * parse according to the wikipedia table?
- * detect key
- in C majr,  [Am7 ->  ii7, D9 -> II9] (where those are all strings)
+ * detect key. in C majr,  [Am7 ->  vi7, D9 -> II9] (where those are all strings)
  * harvest many example chord sheets, and build list of every chord symbol found
- * sus chords replace the third with a 2nd or 4th. sus on its own means sus4, so Asus9 means Asus4 with a 9th.
  * power chords? E5
- * C6. or CM6
- * decorations could be :: [Interval]
  * reread all of wikipedia article see [[Crdapp:TheoryRefs]]
- * a slash chord may be on an interval not a pitch. Cm/M7
+ * a slash chord may be on an interval not a pitch. Cm/M7 - examples?
+ * CM6
+ * If all we want to do is transpose and romanize, we only need a dirt-simple parser to pick out root note and bass note.  Chord quality and type of sevents are useful if we're guessing key but I think the user should always be happy entering that.
 
  DONE
 
  * chord color rename to chord quality
  * given a key, report chords in roman numeral form.  Start test first.  test set will look like:
+ * sus chords replace the third with a 2nd or 4th. sus on its own means sus4, so Asus9 means Asus4 with a 9th.
+ * C6, Cm6
+
+IGNORED:
+
+ * decorations could be :: [Interval].  (don't need)

@@ -20,7 +20,8 @@ data ChordSheetLine a = ChordSheetLine {cslItems :: [ChordSheetItem a],
 
 type ChordSheetItem a = (Either String (Chord a), (String, Int))
 
--- currently, a chord sheet may have many "chords" optimistically partially parsed.  Ignore these by asking only for the chords from lines that look like chords
+-- currently, a chord sheet may have many "chords" optimistically partially parsed.
+-- Ignore these by asking only for the chords from lines that look like chords
 chordsInSheet ::  ChordSheet a -> [Chord a]
 chordsInSheet = rights . map fst . concatMap cslItems . filter lineLooksLikeChords . csLines
 
