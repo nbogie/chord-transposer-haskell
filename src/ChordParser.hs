@@ -112,19 +112,16 @@ pQuality = do
             "m"   -> CCMinor
             _     -> CCMajor
 
+tests       = testASet testData
+futureTests = testASet unsupportedTestData
 
-
-
-
--- tests = runTestTT $ TestList [ 4 ~=? 10 ]
-{- 
--}
-tests = runTestTT $ TestList $ map testIt testData
+testASet testSet = runTestTT $ TestList $ map testIt testSet
   where 
     testIt :: (String, Chord Note) -> Test
     testIt (inp, expected) = ("When input is " ++ inp) ~: 
                            expected ~=? either (error "(no parse)") id (parse pChord "" inp)
 
+-- TEST CONVENIENCES
 initChord :: (Symmable a) => a -> ChordQuality -> Chord a 
 initChord n color = Chord { rootNote = n, bassNote = Nothing, cQuality = color, cDecorations = [] }
 
@@ -135,6 +132,14 @@ aug = CCAugmented
 dim = CCDiminished
 
 sus c i = c { cDecorations = cDecorations c ++ ["sus" ++ show i] }
+
+-- conveniences for modifying a chord 
+-- normally these are used to further its specification.  Ideally reflect this in the types.
+with :: Chord a -> [String] -> Chord a
+with baseChord decorations = baseChord { cDecorations = cDecorations baseChord ++ decorations }
+on :: Chord a -> a -> Chord a
+on   baseChord bNote       = baseChord { bassNote = Just bNote }
+
 
 testData = 
   [ ("A"     , crd A      maj                   )
@@ -163,6 +168,8 @@ testData =
 unsupportedTestData = 
   [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
+  , ("Cadd2" , crd C      maj `with` ["add2"]   )
+  , ("Cadd2*", crd C      maj `with` ["add2*"]   ) -- asterisk seen marking "unusual chords"
   , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
   , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
   , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
@@ -178,9 +185,3 @@ unsupportedTestData =
   ]
   where crd = initChord
 
--- conveniences for modifying a chord 
--- normally these are used to further its specification.  Ideally reflect this in the types.
-with :: Chord a -> [String] -> Chord a
-with baseChord decorations = baseChord { cDecorations = cDecorations baseChord ++ decorations }
-on :: Chord a -> a -> Chord a
-on   baseChord bNote       = baseChord { bassNote = Just bNote }
