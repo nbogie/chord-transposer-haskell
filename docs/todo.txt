@@ -21,6 +21,7 @@ I think when outputting the chords we have to preserve the notation type, so aft
  * given a key, report chords in roman numeral form.  Start test first.  test set will look like:
  * sus chords replace the third with a 2nd or 4th. sus on its own means sus4, so Asus9 means Asus4 with a 9th.
  * C6, Cm6
+ * TODO: escape for html all strings from the input, when generating tagged output.
 
 IGNORED:
 

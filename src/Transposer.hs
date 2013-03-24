@@ -7,7 +7,7 @@ import ChordParser hiding (main, tests)
 import LineSplitter
 import Notes
 import Test.HUnit
-import Utils (bool)
+import Utils (bool, escapeHTML)
 import Data.Maybe (listToMaybe, fromMaybe)
 
 main :: IO ()
@@ -111,7 +111,9 @@ printChordSheetLine :: (Symmable a) => PrintFormat -> ChordSheetLine a -> String
 printChordSheetLine format line@(ChordSheetLine items orig) = 
   if lineLooksLikeChords line
     then printCSIsAtPositions format items
-    else orig
+    else printNonChordLine    format orig
+  where printNonChordLine PlainText = id
+        printNonChordLine TaggedText = escapeHTML
 
 -- Todo: Improve decision-making over whether a line is chords or not.
 -- a single line of text like "Coda:" will wrongly be parsed as a C chord with unrecognised, but carried, detail.
@@ -152,7 +154,7 @@ generateTextAndHTML = foldl' f ("","")
         f :: (PlainString,HtmlString) -> (MarkupElement, String, Pos) -> (PlainString, HtmlString)
         f (accText,accHtml) (elemType, word, pos) = (text, html)
           where text = accText ++ replicate padLen ' ' ++ word
-                html = accHtml ++ replicate padLen ' ' ++ spanIt elemType word 
+                html = accHtml ++ replicate padLen ' ' ++ spanIt elemType (escapeHTML word)
                 padLen = if pos == 0
                          then 0
                          else max 1 (pos - length accText)
