@@ -113,6 +113,7 @@ instance Symmable RomanNote where
    fromPure 9 = VI 
    fromPure 10 = VIIFlat 
    fromPure 11 = VII 
+   fromPure other = error $ "BUG: fromPure no such note: "++show other 
 
 semitoneDiff :: Note -> Note -> Int
 semitoneDiff k n = (12+ toPure n - toPure k) `mod` 12
@@ -172,4 +173,5 @@ instance Symmable Note where
    fromPure  9 = FSharp  
    fromPure  10 = G       
    fromPure  11 = GSharp  
-    
+   fromPure other = error $ "BUG: fromPure no such note: "++show other 
+   -- TODO: don't use an Int - they can have values constructed which we consider illegal

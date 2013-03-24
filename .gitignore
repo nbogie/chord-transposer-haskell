@@ -2,3 +2,5 @@ cabal-dev
 *.swp
 dist
 testdata/ignore
+src/Main
+

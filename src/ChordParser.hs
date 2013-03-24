@@ -1,6 +1,6 @@
 module ChordParser where
 
-import Data.Either
+-- import Data.Either
 import Text.ParserCombinators.Parsec
 
 import Notes
@@ -17,7 +17,7 @@ import Test.HUnit
 main :: IO ()
 
 main    = do
-  tests
+  _counts <- tests
   return ()
 
 main2 :: IO ()
@@ -122,8 +122,8 @@ pQuality = do
 tests = runTestTT $ TestList $ map testIt testData
   where 
     testIt :: (String, Chord Note) -> Test
-    testIt (inp, exp) = ("When input is " ++ inp) ~: 
-                           exp ~=? either (error "(no parse)") id (parse pChord "" inp)
+    testIt (inp, expected) = ("When input is " ++ inp) ~: 
+                           expected ~=? either (error "(no parse)") id (parse pChord "" inp)
 
 initChord :: (Symmable a) => a -> ChordQuality -> Chord a 
 initChord n color = Chord { rootNote = n, bassNote = Nothing, cQuality = color, cDecorations = [] }
