@@ -1,6 +1,5 @@
 module ChordParser where
 
--- import Data.Either
 import Text.ParserCombinators.Parsec
 
 import Notes
@@ -66,14 +65,31 @@ pChord = do
 
 pDecoration :: Parser String
 pDecoration = 
-       string "7" <|> string "M7" <|> 
-       many1(digit) <|> 
-       try (string "sus2") <|> try (string "sus4") <|> string "sus" <|>  -- sus is sus4. normalise?
-       (string "add" >> many1(digit) >>= return . ("add"++))  <|>
+       string "7"    <|> 
+       try (do; m <- string "M"; i <- pInterval; return (m ++ i) ) <|> 
+       string "Maj7" <|> 
+       pInterval     <|> 
+       pSuspended    <|>
+       try (do; a <- string "add"; i <- pInterval; return (a ++ i) ) <|> 
        try (string "+5") <|> string "+9" <|> -- confusion with aug (C+)
        try (string "-5") <|> string "-9" <|>
        try (string "b5") <|> string "b9" <|>
-       try (string "#5") <|> string "#9" 
+       try (string "#5") <|> string "#9" <|>
+       try pSlashInterval 
+  where
+    -- sus is common, means sus4.
+    pSuspended :: Parser String
+    pSuspended = try (string "sus2") <|> try (string "sus4") <|> string "sus"
+
+    pSlashInterval :: Parser String
+    pSlashInterval = do
+      sl     <- string "/"
+      optMod <- choice [string "+", string "-", return ""] 
+      i      <- pInterval
+      return $ sl ++ optMod ++ i
+
+    pInterval  :: Parser String -- TODO: this should be between 1 and 15 ?
+    pInterval = many1 digit
 
 
 pSlashBassNote :: Parser (Maybe Note)
@@ -107,6 +123,7 @@ pNote = do
 -- or "dim"
 -- Ca could be Caug... or Cadd...
 -- anything else is major
+
 pQuality :: Parser ChordQuality
 pQuality = do
   s <- string "dim" <|>try (string "aug") <|> string "+" <|> string "m" <|> return ""
@@ -116,7 +133,6 @@ pQuality = do
             "+"   -> CCAugmented
             "m"   -> CCMinor
             _     -> CCMajor
-
 tests       = testASet testData
 futureTests = testASet unsupportedTestData
 
@@ -171,17 +187,24 @@ testData =
   , ("Cadd9" , crd C      maj `with` ["add9"]   )
   , ("C7add13", crd C      maj `with` ["7", "add13"]   ) -- indicates no 9th or 11th (not that we care).
   , ("C5"    , crd C      maj `with` ["5"]   )
+  , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
+  , ("GM9"   , crd G      maj `with` ["M9"]     )
+  -- these are strange - I think they're not indicating a bass note, just using slash as a separator between details
+  -- we don't care for current purposes.
+  , ("A7/+5" , crd A      maj `with` ["7", "/+5"]      )
+  , ("A7/-9" , crd A      maj `with` ["7", "/-9"]      )
+  , ("Am7/+5", crd A      mnr `with` ["7", "/+5"]   )
+  , ("Am7/-5", crd A      mnr `with` ["7", "/-5"]   )
+
+  , ("A6/9"  , crd A      maj `with` ["6", "/9"]    ) -- quite different from A7/C#
+  , ("Am7/6" , crd A      mnr `with` ["7", "/6"]    )
+  , ("Am7/9" , crd A      mnr `with` ["7", "/9"]    )
   ] 
   where crd = initChord
 
 unsupportedTestData = 
   [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
-
-  -- common:
-  , ("GM9"   , crd G      maj `with` ["M9"]     )
-  , ("A6/9"  , crd A      maj `with` ["6/9"]    ) -- quite different from A7/C#
-  , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
 
 
   , ("C11dim9", crd C  maj `with` ["11", "dim9"]  )  -- C11dim9
@@ -205,13 +228,6 @@ unsupportedTestData =
   , ("E7(b9)", crd E      maj `with` ["7", "b9"]) -- parens
   , ("Cmmaj7", crd C      mnr `with` ["maj7"]   )
   , ("A-Maj7", crd A      mnr `with` ["Maj7"]   )
-  -- we can't even represent these yet.  we lose the fact they've been specified with an interval for the bass, rather than an absolute.  This could be a printing preference, but we'd lose whether they specified sharp fifth or flat sixth.
-  , ("A7/+5" , crd A      maj `on` F     `with` ["7"]      )
-  , ("A7/-9" , crd A      maj `on` BFlat `with` ["7"]      )
-  , ("Am7/+5", crd A      mnr `on` F     `with` ["7"]      )
-  , ("Am7/-5", crd A      mnr `on` EFlat `with` ["7"]      )
-  , ("Am7/6" , crd A      mnr `on` GFlat `with` ["7"]      )
-  , ("Am7/9" , crd A      mnr `on` B     `with` ["7"]      )
 
   , ("Cadd2*", crd C      maj `with` ["add2*"]   ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
   ]
