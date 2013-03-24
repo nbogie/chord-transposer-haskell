@@ -25,6 +25,10 @@ To rewrite absolute chords with relative roman numerals (currently using the fir
 
     runhaskell Main.hs -r < song.txt
 
+To output sheet in an html pre (of class chordsheet) with successfully parsed chords tagged in spans of class pc, use --html:
+
+    runhaskell Main.hs --html --transpose=0 < song.txt
+
 For more help:
 
     runhaskell Main.hs --help

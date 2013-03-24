@@ -104,8 +104,8 @@ printChordSheet :: (Symmable a) => PrintFormat -> ChordSheet a -> String
 printChordSheet PlainText ls  = unlines $ map (printChordSheetLine PlainText) (csLines ls)
 printChordSheet TaggedText ls = prependStylesheet $ wrapInPre $unlines $ map (printChordSheetLine TaggedText) (csLines ls)
   where 
-    wrapInPre text = "<pre>" ++ text ++ "</pre"
-    prependStylesheet text = "<style>span { color : red; font-weight: bold}</style>" ++ text
+    wrapInPre text = "<pre class='chordsheet'>" ++ text ++ "</pre"
+    prependStylesheet text = "<style>span { color : blue; font-weight: bold}</style>" ++ text
 
 printChordSheetLine :: (Symmable a) => PrintFormat -> ChordSheetLine a -> String
 printChordSheetLine format line@(ChordSheetLine items orig) = 
