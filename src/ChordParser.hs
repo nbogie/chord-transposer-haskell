@@ -67,10 +67,14 @@ pChord = do
 pDecoration :: Parser String
 pDecoration = 
        string "7" <|> string "M7" <|> 
-       string "6" <|> string "9" <|> try (string "11") <|> try (string "13") <|> 
+       many1(digit) <|> 
        try (string "sus2") <|> try (string "sus4") <|> string "sus" <|>  -- sus is sus4. normalise?
+       (string "add" >> many1(digit) >>= return . ("add"++))  <|>
+       try (string "+5") <|> string "+9" <|> -- confusion with aug (C+)
        try (string "-5") <|> string "-9" <|>
+       try (string "b5") <|> string "b9" <|>
        try (string "#5") <|> string "#9" 
+
 
 pSlashBassNote :: Parser (Maybe Note)
 pSlashBassNote = fmap Just (string "/" >> pNote)
@@ -97,14 +101,15 @@ pNote = do
     "Gb" -> GFlat
     "G" -> G
     "G#" -> GSharp
-    other -> error $ "BUG: unrecognised reformed note " ++ other
+    other -> error $ "BUG: pNote: unrecognised reformed note " ++ other
 
 -- m (not followed by an a for "maj") (peeking - don't consume)
 -- or "dim"
+-- Ca could be Caug... or Cadd...
 -- anything else is major
 pQuality :: Parser ChordQuality
 pQuality = do
-  s <- string "dim" <|>string "aug" <|> string "+" <|> string "m" <|> return ""
+  s <- string "dim" <|>try (string "aug") <|> string "+" <|> string "m" <|> return ""
   return $ case s of
             "dim" -> CCDiminished
             "aug" -> CCAugmented
@@ -161,19 +166,44 @@ testData =
   , ("A#m7-5", crd ASharp mnr `with` ["7","-5"] )
   , ("Am/C"  , crd A      mnr `on` C            )
   , ("C+"    , crd C      aug                   )
-  , ("F7#5#9"  , crd F      maj `with` ["7", "#5", "#9"])
+  , ("F7#5#9", crd F      maj `with` ["7", "#5", "#9"])
+  , ("Cadd2" , crd C      maj `with` ["add2"]   )
+  , ("Cadd9" , crd C      maj `with` ["add9"]   )
+  , ("C7add13", crd C      maj `with` ["7", "add13"]   ) -- indicates no 9th or 11th (not that we care).
+  , ("C5"    , crd C      maj `with` ["5"]   )
   ] 
   where crd = initChord
 
 unsupportedTestData = 
   [ ("Bb-7"  , crd BFlat  mnr `with` ["7"]      ) -- the minus applies to the chord colour not the seventh.
   , ("Bb-/F" , crd BFlat  mnr `on` F            )
-  , ("Cadd2" , crd C      maj `with` ["add2"]   )
-  , ("Cadd2*", crd C      maj `with` ["add2*"]   ) -- asterisk seen marking "unusual chords"
+
+  -- common:
+  , ("GM9"   , crd G      maj `with` ["M9"]     )
+  , ("A6/9"  , crd A      maj `with` ["6/9"]    ) -- quite different from A7/C#
   , ("AMaj7" , crd A      maj `with` ["Maj7"]   )
+
+
+  , ("C11dim9", crd C  maj `with` ["11", "dim9"]  )  -- C11dim9
+  , ("Cm11dim9", crd C  mnr `with` ["11", "dim9"]  )  -- m11dim9
+  , ("C13dim11", crd C maj `with`   ["13", "dim11"])
+  , ("Cm13dim11", crd C mnr `with`  ["13", "dim11"] )
+  , ("C13dim9", crd C maj `with`  ["13", "dim9"])
+  , ("Cm13dim9", crd C mnr `with`  ["13", "dim9"] )
+  , ("C6dim5", crd C maj `with`  ["6", "dim5"] )
+  , ("C7dim5", crd C maj `with`  ["7", "dim6"] )
+  , ("Cm7dim5", crd C mnr `with` ["7", "dim5"]  )
+  , ("C7dim9", crd C maj `with` ["7", "dim9"]  )
+  , ("Cm7dim9", crd C mnr `with` ["7", "dim9"]  )
+  , ("C9dim5", crd C maj `with` ["dim5"]  )
+  , ("Cmdim9", crd C mnr `with` ["dim9"]  )
+  , ("Cmdim11", crd C mnr `with` ["dim11"]  )
+  , ("Cmdim13", crd C mnr `with` ["dim13"]  )
+
   , ("A-(Maj7)", crd A    mnr `with` ["Maj7"]   ) -- w parens
   , ("A-(#5)"  , crd A    mnr `with` ["#5"]     )
-  , ("E7(b9)", crd E      maj `with` ["7", "b9"])
+  , ("E7(b9)", crd E      maj `with` ["7", "b9"]) -- parens
+  , ("Cmmaj7", crd C      mnr `with` ["maj7"]   )
   , ("A-Maj7", crd A      mnr `with` ["Maj7"]   )
   -- we can't even represent these yet.  we lose the fact they've been specified with an interval for the bass, rather than an absolute.  This could be a printing preference, but we'd lose whether they specified sharp fifth or flat sixth.
   , ("A7/+5" , crd A      maj `on` F     `with` ["7"]      )
@@ -182,6 +212,8 @@ unsupportedTestData =
   , ("Am7/-5", crd A      mnr `on` EFlat `with` ["7"]      )
   , ("Am7/6" , crd A      mnr `on` GFlat `with` ["7"]      )
   , ("Am7/9" , crd A      mnr `on` B     `with` ["7"]      )
+
+  , ("Cadd2*", crd C      maj `with` ["add2*"]   ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
   ]
   where crd = initChord
 

@@ -1,3 +1,4 @@
+* don't recognise N.C. (no chord) e.g.  D [N.C.]           G      G/F#
 * TODO: collect and summarise all chords encountered (e.g. show all guitar chords, or talk about the likely (or confirmed) key and their name and harmonic function within it).
 * add structured output (json?) including whether a chord was parsed, what part of it wasn't.  typed first, then json.
 * TODO: add support for C- where we only have Cm currently.  Drive with examples.
@@ -17,6 +18,7 @@ I think when outputting the chords we have to preserve the notation type, so aft
 
  DONE
 
+ * support added tone chords (Cadd2, C7add13)
  * chord color rename to chord quality
  * given a key, report chords in roman numeral form.  Start test first.  test set will look like:
  * sus chords replace the third with a 2nd or 4th. sus on its own means sus4, so Asus9 means Asus4 with a 9th.
