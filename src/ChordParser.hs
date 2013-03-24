@@ -27,7 +27,7 @@ parseAndPrint :: String -> IO ()
 parseAndPrint input = do
   print input
   case parse pChords "foo" input of
-    Left err -> print $ "error: " ++ (show err)
+    Left err -> print $ "error: " ++ show err
     Right chords -> mapM_ print $ zip (words input) chords
 
 parseAndShow :: String -> String
@@ -65,13 +65,12 @@ pChord = do
   return $ Chord r bn c ds
 
 pDecoration :: Parser String
-pDecoration = do 
-  d <- string "7" <|> string "M7" <|> 
+pDecoration = 
+       string "7" <|> string "M7" <|> 
        string "9" <|> try (string "11") <|> try (string "13") <|> 
        try (string "sus2") <|> string "sus4" <|> 
        try (string "-5") <|> string "-9" <|>
        try (string "#5") <|> string "#9" 
-  return d
 
 pSlashBassNote :: Parser (Maybe Note)
 pSlashBassNote = fmap Just (string "/" >> pNote)
@@ -122,7 +121,7 @@ pQuality = do
 -}
 tests = runTestTT $ TestList $ map testIt testData
   where 
-    testIt :: (String, (Chord Note)) -> Test
+    testIt :: (String, Chord Note) -> Test
     testIt (inp, exp) = ("When input is " ++ inp) ~: 
                            exp ~=? either (error "(no parse)") id (parse pChord "" inp)
 

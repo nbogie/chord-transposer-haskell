@@ -26,9 +26,9 @@ chordsInSheet = rights . map fst . concatMap cslItems . filter lineLooksLikeChor
 
 transposeStdin :: Transposition -> Bool -> IO () 
 transposeStdin amt formatAsRoman = 
-    interact $ (bool (printChordSheet . romanizeSheet) 
+    interact $ bool (printChordSheet . romanizeSheet) 
                      (printChordSheet . id)
-                     formatAsRoman) 
+                     formatAsRoman 
                . transposeChordSheet amt . traceInline "chord summary" summarizeChords . parseChordSheet
 
 traceInline ::  String -> (a -> String) -> a -> a
@@ -104,7 +104,7 @@ printChordSheet ls = unlines $  map printChordSheetLine (csLines ls)
 
 printChordSheetLine :: (Symmable a) => ChordSheetLine a -> String
 printChordSheetLine line@(ChordSheetLine items orig) = 
-  if (lineLooksLikeChords line)
+  if lineLooksLikeChords line
     then printCSIsAtPositions items
     else orig
 
@@ -115,9 +115,9 @@ printChordSheetLine line@(ChordSheetLine items orig) =
 -- Ah, what to do for: "Repeat Gm7 for outro"  - The chord won't get transposed under current rules.
 lineLooksLikeChords (ChordSheetLine items orig) = 
   length (rights chordAttempts) >= length (lefts chordAttempts)
-  && (not (lineContainsKeywords orig))
+  && not (lineContainsKeywords orig)
     where 
-      chordAttempts = (map fst items)
+      chordAttempts = map fst items
 
 lineContainsKeywords str = any (\kw -> any (isPrefixOf kw . lower) (words str)) keywords
   where
