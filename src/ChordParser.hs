@@ -67,7 +67,7 @@ pChord = do
 pDecoration :: Parser String
 pDecoration = 
        string "7" <|> string "M7" <|> 
-       string "9" <|> try (string "11") <|> try (string "13") <|> 
+       string "6" <|> string "9" <|> try (string "11") <|> try (string "13") <|> 
        try (string "sus2") <|> string "sus4" <|> 
        try (string "-5") <|> string "-9" <|>
        try (string "#5") <|> string "#9" 
@@ -146,6 +146,7 @@ testData =
   , ("F#dim" , crd FSharp dim                   )
   , ("A/F#"  , crd A      maj `on` FSharp       )
   , ("Am"    , crd A      mnr                   ) 
+  , ("Am6"   , crd A      mnr `with` ["6"]      )
   , ("Am7"   , crd A      mnr `with` ["7"]      )
   , ("AM7"   , crd A      maj `with` ["M7"]     )
   , ("Gsus2" , crd G      maj `sus` 2           )
