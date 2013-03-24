@@ -50,8 +50,12 @@ keyFromFirstChord :: ChordSheet Note -> Maybe Key
 keyFromFirstChord cs = fmap keyFromChord firstChord
   where firstChord = listToMaybe $ chordsInSheet cs
 
+-- relative major if the chord is minor, otherwise, blindly, the major key in that root.
 keyFromChord :: Chord Note -> Key
-keyFromChord c = (rootNote c, MajorScale) --TODO: consider colour of chord
+keyFromChord c = (rn, MajorScale)
+  where rn = (if cQuality c == CCMinor then relativeMajor else id) $ rootNote c
+
+relativeMajor n = upSemitones n 3
 
 chordQualityToKeyType CCMinor = MinorScale
 chordQualityToKeyType CCMajor = MajorScale
