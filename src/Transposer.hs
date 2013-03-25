@@ -61,6 +61,7 @@ keyFromChord c = (rn, MajorScale)
   where rn = (if cQuality c == CCMinor then relativeMajor else id) $ rootNote c
         relativeMajor = upSemitones 3
 
+chordQualityToKeyType ::  ChordQuality -> ScaleType
 chordQualityToKeyType CCMinor = MinorScale
 chordQualityToKeyType CCMajor = MajorScale
 chordQualityToKeyType CCDiminished = MajorScale -- ?
@@ -120,16 +121,17 @@ printChordSheetLine format line@(ChordSheetLine items orig) =
 -- This is because we wish to be so accommodating with allowing unrecognised chords past.
 -- Neither "Coda:", nor "Coro", nor "Bridge" are likely to be legal chords under anyone's notation!
 -- Ah, what to do for: "Repeat Gm7 for outro"  - The chord won't get transposed under current rules.
+lineLooksLikeChords ::  ChordSheetLine t -> Bool
 lineLooksLikeChords (ChordSheetLine items orig) = 
   length (rights chordAttempts) >= length (lefts chordAttempts)
-  && not (lineContainsKeywords orig)
+  && not (containsKeywords orig)
     where 
       chordAttempts = map fst items
 
-lineContainsKeywords str = any (\kw -> any (isPrefixOf kw . lower) (words str)) keywords
-  where
-    keywords = map (map toLower) ["Instr", "Break", "Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
-    lower = map toLower
+      containsKeywords str = any (\kw -> any (isPrefixOf kw . lower) (words str)) keywords
+        where
+          keywords = map (map toLower) ["Instr", "Break", "Bridge", "Chorus", "Intro", "Verse", "Coro", "Coda"] -- ugh!
+          lower = map toLower
 
 data PrintFormat = TaggedText | PlainText deriving (Show, Eq)
 
@@ -161,10 +163,12 @@ generateTextAndHTML = foldl' f ("","")
                 spanIt PlainElem x = "" ++ x ++ ""
                 spanIt ChordElem x = "<span class='pc'>" ++ x ++ "</span>"
          
+tests ::  IO Counts
 tests = runTestTT $ TestList [printStringsTests, romanizeTests]
 
+romanizeTests ::  Test
 romanizeTests = TestList 
-  $ map (testRomanizationInKey C MajorScale) [("Em9", "iii9")
+  $ map (testRomanizeInKey C  MajorScale) [("Em9", "iii9")
   ,("Am7", "vi7"), ("D9", "II9"), ("Gsus4/F", "Vsus4/IV")]
 data ScaleType = MajorScale | MinorScale deriving (Show) -- TODO: multiple minor keys
 
@@ -182,8 +186,8 @@ romanizeInKey (keyRoot,_) chord = Chord {
     newRoot     = toRoman keyRoot (rootNote chord)
     newBassNote = fmap (toRoman keyRoot) $ bassNote chord
 
--- testRomanizationInKey :: Note -> ScaleType -> (String, String) -> TestCase
-testRomanizationInKey keyRoot keyScale (inp, expectedSym) = 
+testRomanizeInKey ::  Note -> ScaleType -> (String, String) -> Test
+testRomanizeInKey keyRoot keyScale (inp, expectedSym) = 
   label ~: expectedSym ~=? chordToSym (romanizeInKey (keyRoot, keyScale) chord)
   where 
     label = "in "++show(keyRoot, keyScale) ++ " with input " ++ inp
@@ -191,8 +195,8 @@ testRomanizationInKey keyRoot keyScale (inp, expectedSym) =
                 Right c -> c
                 Left err -> error err -- todo: test failure
   
+printStringsTests ::  Test
 printStringsTests = TestList 
-  [ 4 ~=? 2+2
-  , "Hi" ~=? printStringsAtPositions PlainText [(ChordElem, "Hi", 0)] -- no initial padding
+  [ "Hi" ~=? printStringsAtPositions PlainText [(ChordElem, "Hi", 0)] -- no initial padding
   , " Foo" ~=? printStringsAtPositions PlainText [(ChordElem, "Foo", 1)] -- but original leading whitespace should be preserved
   ]

@@ -40,6 +40,8 @@ data Chord a = Chord
            } deriving (Eq, Show, Ord)
 
 data ChordQuality = CCMajor | CCMinor | CCDiminished| CCAugmented deriving (Eq, Show, Ord)
+
+isMinorQuality ::  ChordQuality -> Bool
 isMinorQuality CCMinor = True
 isMinorQuality _ = False
 

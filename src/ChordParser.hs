@@ -146,15 +146,19 @@ pNote = do
 instance Eq ParseError where
   a == b = errorMessages a == errorMessages b
 
+testPQuality ::  Test
 testPQuality = TestList 
   [ "maj should fail to parse as quality" ~: Right CCMajor ~=? parse pQuality "" "maj"
   , "m   should parse as quality"         ~: Right CCMinor ~=? parse pQuality "" "m"
   ]
 
-tests       = runTestTT $ TestList [ testPQuality, testFromSet testData ]
-futureTests = runTestTT $ TestList [ testFromSet unsupportedTestData ]
+tests ::  IO Counts
+tests       = runTestTT $ TestList [ testPQuality, testFromData testData ]
+futureTests ::  IO Counts
+futureTests = runTestTT $ TestList [ testFromData unsupportedTestData ]
 
-testFromSet testSet = TestList $ map testIt testSet
+testFromData ::  [(String, Chord Note)] -> Test
+testFromData d = TestList $ map testIt d
   where 
     testIt :: (String, Chord Note) -> Test
     testIt (inp, expected) = ("When input is " ++ inp) ~: 
@@ -165,11 +169,13 @@ initChord :: (Symmable a) => a -> ChordQuality -> Chord a
 initChord n qual = Chord { rootNote = n, bassNote = Nothing, cQuality = qual, cDecorations = [] }
 
 -- conveniences for qualities
+maj,mnr,aug,dim ::  ChordQuality
 maj = CCMajor
 mnr = CCMinor
 aug = CCAugmented
 dim = CCDiminished
 
+sus :: Chord a -> Int -> Chord a
 sus c i = c { cDecorations = cDecorations c ++ ["sus" ++ show i] }
 
 -- conveniences for modifying a chord 
@@ -180,6 +186,7 @@ on :: Chord a -> a -> Chord a
 on   baseChord bNote       = baseChord { bassNote = Just bNote }
 
 
+testData ::  [(String, Chord Note)]
 testData = 
   [ ("A"         , crd A      maj                                 )
   , ("A#7-9"     , crd ASharp maj `with` ["7","-9"]               )
@@ -245,6 +252,7 @@ testData =
   ] 
   where crd = initChord
 
+unsupportedTestData ::  [(String, Chord Note)]
 unsupportedTestData = 
   [ ("Bb-7"      , crd BFlat  mnr `with` ["7"]                    ) -- the minus applies to the chord quality not the seventh.
   , ("Bb-/F"     , crd BFlat  mnr                      `on` F     )
