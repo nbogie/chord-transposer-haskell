@@ -4,3 +4,4 @@ dist
 testdata/ignore
 src/Main
 
+makedocs.sh
