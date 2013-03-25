@@ -13,12 +13,12 @@ name:                chord-sheet-transposer
 version:             0.1.0.0
 
 -- A short (one-line) description of the package.
--- synopsis:            Chord Sheet Transposer
+synopsis:            Transposer for informal chord-and-lyric sheets
+
 -- A longer description of the package.
 description:         Parses and modifies informal lyric + chord sheets allowing transposition and analysis.
-
 -- The license under which the package is released.
--- license:          MIT  
+license:          MIT  
 
 -- The file containing the license text.
 license-file:        docs/LICENSE
@@ -55,7 +55,7 @@ executable        chord-sheet-transposer
   -- Other library packages from which modules are imported.
   
   build-depends:
-      base >= 4.2.0.0
+      base >= 4.2.0.0 && < 5
     , parsec >= 3.1.2
     , cmdargs >= 0.6
     , HUnit >= 1.2.0.0
@@ -63,3 +63,8 @@ executable        chord-sheet-transposer
     , containers >= 0.4.2.0
 
   ghc-options: -Wall -fno-warn-missing-signatures
+
+source-repository head
+   type:     git
+   location: git://github.com/nbogie/chord-transposer-haskell.git
+
