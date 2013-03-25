@@ -79,9 +79,9 @@ withEachChordInLine f csl = csl { cslItems = map (withOneCSLI f) origItems }
 withOneCSLI :: (Chord a -> Chord b) -> ChordSheetItem a -> ChordSheetItem b 
 withOneCSLI f (c,z)       = (fmap f c, z)
 
-transposeChordSheetStr :: Transposition -> String -> String
-transposeChordSheetStr amt = 
-    printChordSheet PlainText . transposeChordSheet amt . parseChordSheet
+transposeChordSheetStr :: PrintFormat -> Transposition -> String -> String
+transposeChordSheetStr fmt amt = 
+    printChordSheet fmt . transposeChordSheet amt . parseChordSheet
 
 parseChordSheet :: String -> ChordSheet Note
 parseChordSheet input = ChordSheet $ map parseChordSheetLine (lines input)
