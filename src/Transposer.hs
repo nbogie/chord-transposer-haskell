@@ -11,7 +11,7 @@ import Utils (bool, escapeHTML)
 import Data.Maybe (listToMaybe, fromMaybe)
 
 main :: IO ()
-main = tests >> transposeStdin PlainText 0 True-- flag is to romanize 
+main = tests >> transposeStdin PlainText 0 True Nothing-- flag is to romanize 
 
 type Pos = Int
 
@@ -29,9 +29,9 @@ type ChordSheetItem a = (Either String (Chord a), (String, Pos))
 chordsInSheet ::  ChordSheet a -> [Chord a]
 chordsInSheet = rights . map fst . concatMap cslItems . filter lineLooksLikeChords . csLines
 
-transposeStdin :: PrintFormat -> Transposition -> Bool -> IO () 
-transposeStdin format amt shouldRomanize = 
-    interact $ bool (printChordSheet format . romanizeSheet) 
+transposeStdin :: PrintFormat -> Transposition -> Bool -> Maybe Key -> IO () 
+transposeStdin format amt shouldRomanize origKeyM = 
+    interact $ bool (printChordSheet format . romanizeSheet origKeyM) 
                      (printChordSheet format . id)
                      shouldRomanize 
                . transposeChordSheet amt . traceInline "chord summary" summarizeChords . parseChordSheet
@@ -44,9 +44,9 @@ showAllChords   = unlines . map chordToSym . chordsInSheet
 summarizeChords ::  (Symmable a, Eq a, Ord a) => ChordSheet a -> String
 summarizeChords = unlines . map chordToSym . sort . nub . chordsInSheet  
 
-romanizeSheet :: ChordSheet Note -> ChordSheet RomanNote
-romanizeSheet cs = withEachChordInSheet (romanizeInKey key) cs
-  where key = guessKey cs
+romanizeSheet :: Maybe Key -> ChordSheet Note -> ChordSheet RomanNote
+romanizeSheet origKeyM cs = withEachChordInSheet (romanizeInKey key) cs
+  where key = fromMaybe (guessKey cs) origKeyM
 
 guessKey :: ChordSheet Note -> Key -- TODO: return probability, or perhaps alternatives
 guessKey cs = fromMaybe (error "couldn't guess key") (keyFromFirstChord cs) --TODO: handle unguessable key (e.g. no chords)

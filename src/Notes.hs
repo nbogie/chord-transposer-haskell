@@ -31,7 +31,7 @@ upSemitones i n = fromPure $ toEnum tag
 
 data Note = AFlat | A | ASharp | BFlat |  B | C | 
             CSharp | DFlat |  D | DSharp | EFlat |  E | 
-            F | FSharp | GFlat |  G | GSharp deriving (Eq, Show, Ord)
+            F | FSharp | GFlat |  G | GSharp deriving (Eq, Show, Ord, Read)
 data Chord a = Chord 
            { rootNote::a
            , bassNote::Maybe a

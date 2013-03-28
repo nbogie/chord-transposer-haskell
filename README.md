@@ -21,9 +21,11 @@ To transpose some song up 3 semitones:
 
     runhaskell Main.hs --transpose=3 < song.txt
 
-To rewrite absolute chords with relative roman numerals (currently using the first encountered chord to dictate the key):
+To rewrite absolute chords with relative roman numerals, use -r, and specify an original key with -k
 
-    runhaskell Main.hs -r < song.txt
+    runhaskell Main.hs -r -k GSharp < song.txt
+
+(If you omit -k, the original key will be poorly guessed based currently on the first encountered chord.)
 
 To output sheet in an html pre (of class chordsheet) with successfully parsed chords tagged in spans of class pc, use --html:
 
