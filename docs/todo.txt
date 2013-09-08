@@ -1,3 +1,4 @@
+* see if this agrees http://www.reddit.com/r/musictheory/comments/1h8tol/faq_question_how_do_i_read_lead_sheet_notation/caryq0w
 * don't recognise N.C. (no chord) e.g.  D [N.C.]           G      G/F#
 * TODO: collect and summarise all chords encountered (e.g. show all guitar chords, or talk about the likely (or confirmed) key and their name and harmonic function within it).
 * add structured output (json?) including whether a chord was parsed, what part of it wasn't.  typed first, then json.
