@@ -64,13 +64,14 @@ pChord = do
 
 pMaybeParenthesisedDecoration :: Parser String
 pMaybeParenthesisedDecoration = 
-  try (betweenNotDiscarding (string "(") (string ")") pDecoration) <|> pDecoration
+  try (betweenNotDiscarding (string "(") (string ")") (many1 pDecoration)) <|> pDecoration
 
+betweenNotDiscarding :: (Monad m) => m [a] -> m [a] -> m [[a]] -> m [a]
 betweenNotDiscarding pA pB pX = do
   a <- pA
   x <- pX
   b <- pB
-  return $ a ++ x ++ b
+  return $ a ++ (concat x) ++ b
 
 
 -- Ca.. could be Caug... or Cadd...
@@ -78,12 +79,13 @@ betweenNotDiscarding pA pB pX = do
 -- major quality is generally not stated
 pQuality :: Parser ChordQuality
 pQuality = do
-  s <- string "dim" <|>try (string "aug") <|> string "+" <|> try mNotGreedily <|> return ""
+  s <- string "dim" <|>try (string "aug") <|> string "+" <|> string "-" <|> try mNotGreedily <|> return ""
   return $ case s of
             "dim" -> CCDiminished
             "aug" -> CCAugmented
             "+"   -> CCAugmented
             "m"   -> CCMinor
+            "-"   -> CCMinor
             _     -> CCMajor
   where
    -- we want m for minor in Cm but don't want to eat the m from Cmaj7
@@ -91,10 +93,7 @@ pQuality = do
 
 pDecoration :: Parser String
 pDecoration = 
-       string "7"    <|> 
-       try (do; m <- string "M"; i <- pInterval; return (m ++ i) ) <|> 
-       string "Maj7" <|> 
-       string "maj7" <|> 
+       try (do; mj <- choice ([string "maj", try (string "Maj"), string "M"]) ; i<- pInterval; return (mj ++ i) ) <|> 
        pInterval     <|> 
        pSuspended    <|>
        try (do; a <- string "add"; i <- pInterval; return (a ++ i) ) <|> 
@@ -126,7 +125,7 @@ pDecoration =
     -- e.g. -5 or b9 or #11
     pModifiedInterval  :: Parser String 
     pModifiedInterval = do
-      s       <- oneOf "+-#" 
+      s       <- oneOf "+-#b" 
       ds      <- many1 digit -- TODO: this should be between 1 and 13 ?
       return ( s : ds )
       -- Can there be confusion betwen Gb+5 and aug (i.e. Gb+) ?
@@ -208,13 +207,17 @@ testData ::  [(String, Chord Note)]
 testData = 
   [ ("A"         , crd A      maj                                 )
   , ("A#7-9"     , crd ASharp maj `with` ["7","-9"]               )
+  , ("A-9"       , crd A      mnr `with` ["9"]                    )
+  , ("A(-9)"     , crd A    maj `with` ["(-9)"]                   )
+  , ("A7-9"      , crd A      maj `with` ["7", "-9"]              )
   , ("Aaug"      , crd A      aug                                 )
-  , ("A9"        , crd A      maj `with` ["9"]                    )
+  , ("A9"        , crd A      maj `with` ["9"]                    )  
   , ("Bbm7"      , crd BFlat  mnr `with` ["7"]                    )
   , ("Ab"        , crd AFlat  maj                                 )
   , ("F#dim"     , crd FSharp dim                                 )
   , ("F#dim9"    , crd FSharp dim `with` ["9"]                    )
   , ("F#dim9/A"  , crd FSharp dim `with` ["9"]         `on` A     )
+  , ("F#13"      , crd FSharp maj `with` ["13"]                   )
   , ("A/F#"      , crd A      maj                      `on` FSharp)
   , ("Amaj7"     , crd A      maj `with` ["maj7"]                 )
   , ("Amaj7/G"   , crd A      maj `with` ["maj7"]      `on` G     ) 
@@ -237,9 +240,19 @@ testData =
   , ("C5"        , crd C      maj `with` ["5"]                    )
   , ("AMaj7"     , crd A      maj `with` ["Maj7"]                 )
   , ("GM9"       , crd G      maj `with` ["M9"]                   )
-  , ("Ab7#11"  , crd AFlat  maj `with` ["7", "#11"]           )
+  , ("Ab7#11"    , crd AFlat  maj `with` ["7", "#11"]             )
   , ("Ab7(#11)"  , crd AFlat  maj `with` ["7", "(#11)"]           )
-
+  , ("Ab7(b9)"   , crd AFlat  maj `with` ["7", "(b9)"]            )
+  , ("Ab7(b9#11)", crd AFlat  maj `with` ["7", "(b9#11)"]         )
+  , ("A-(#5)"    , crd A      mnr `with` ["(#5)"]                 )
+  , ("A-(Maj7)"  , crd A      mnr `with` ["(Maj7)"]                 ) -- parens
+  , ("A-Maj7"    , crd A      mnr `with` ["Maj7"]                 )
+  , ("E7(b9)"    , crd E      maj `with` ["7", "(b9)"]            )
+  , ("Bb-7"      , crd BFlat  mnr `with` ["7"]                    ) -- the minus applies to the chord quality not the seventh.
+  , ("Bb-/F"     , crd BFlat  mnr                      `on` F     )
+  , ("Dmaj9"     , crd D      maj `with` ["maj9"]                 ) 
+  , ("Dmaj9"     , crd D      maj `with` ["maj9"]                 ) 
+  , ("Dmaj9/C"   , crd D      maj `with` ["maj9"]      `on` C     ) 
   -- These are strange - I think they're not indicating a bass note,
   --   they're just using slash as a separator between details.
   -- We don't care for current purposes.
@@ -254,6 +267,7 @@ testData =
   , ("Am7/6"     , crd A      mnr `with` ["7", "/6"]              )
   , ("Am7/9"     , crd A      mnr `with` ["7", "/9"]              )
 
+  
   -- Suspicious of these, they're all from http://chordlist.brian-amberg.de/en/guitar/standard/C/
   -- I haven't seen them in the wild.  No harm in supporting them, though.
   , ("C11dim9"   , crd C      maj `with` ["11", "dim9"]           )
@@ -281,17 +295,11 @@ testData =
 
 unsupportedTestData ::  [(String, Chord Note)]
 unsupportedTestData = 
-  [ ("Bb-7"      , crd BFlat  mnr `with` ["7"]                    ) -- the minus applies to the chord quality not the seventh.
-  , ("Bb-/F"     , crd BFlat  mnr                      `on` F     )
-  , ("D7+"       , crd D      maj `with` ["7", "+"]               )
-  , ("A-Maj7"    , crd A      mnr `with` ["Maj7"]                 )
-  , ("A-(Maj7)"  , crd A      mnr `with` ["Maj7"]                 ) -- parens
-  , ("Dmaj9"     , crd D      maj `with` ["maj9"]                 ) 
-  , ("Dmaj9/C"   , crd D      maj `with` ["maj9"]      `on` C     ) 
-  , ("A-(#5)"    , crd A      mnr `with` ["(#5)"]                 )
-  , ("E7(b9)"    , crd E      maj `with` ["7", "(b9)"]            )
+  [ ("D7+"       , crd D      aug `with` ["7", "+"]               ) -- We want, but... ugh, this breaks the rule that chord quality be indicated before 7ths.
+  , ("D7+5"      , crd D      aug `with` ["7", "+5"]              )
+
+  , ("(D7b9)"    , crd D      maj `with` ["7", "b9"]              ) -- entire chord in parens.  And how do we restore the parens?
   , ("Cadd2*"    , crd C      maj `with` ["add2*"]                ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
-  , ("(D7b9)"    , crd D      maj `with` ["7", "b9"]              ) -- in parens - we won't restore them. is that problem?
   ]
   where crd = initChord
 
