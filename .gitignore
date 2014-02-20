@@ -5,3 +5,4 @@ testdata/ignore
 src/Main
 
 makedocs.sh
+src/project.sublime-workspace
