@@ -58,9 +58,12 @@ pChord :: Parser (Chord Note)
 pChord = do
   r <- pNote
   c <- pQuality
-  ds <- many pDecoration <|> return []
+  ds <- many pMaybeParenthesisedDecoration <|> return []
   bn <- pSlashBassNote <|> return Nothing
   return $ Chord r bn c ds
+
+pMaybeParenthesisedDecoration :: Parser String
+pMaybeParenthesisedDecoration = try (between (string "(") (string ")")  pDecoration) <|> pDecoration
 
 -- Ca.. could be Caug... or Cadd...
 -- Cm.. could be Cm... or Cmaj...
@@ -109,7 +112,8 @@ pDecoration =
       sl     <- string "/"
       optMod <- choice [string "+", string "-", return ""] 
       i      <- pInterval
-      return $ sl ++ optMod ++ i
+      optModSuffix <- choice [string "+", string "-", return ""] 
+      return $ sl ++ optMod ++ i ++ optModSuffix
 
     pInterval  :: Parser String -- TODO: this should be between 1 and 15 ?
     pInterval = many1 digit
@@ -212,6 +216,7 @@ testData =
   , ("A#m7-5"    , crd ASharp mnr `with` ["7","-5"]               )
   , ("Am/C"      , crd A      mnr                      `on` C     )
   , ("C+"        , crd C      aug                                 )
+  , ("D7+"       , crd D      maj `with` ["7", "+"]               )
   , ("F7#5#9"    , crd F      maj `with` ["7", "#5", "#9"]        )
   , ("Cadd2"     , crd C      maj `with` ["add2"]                 )
   , ("Cadd9"     , crd C      maj `with` ["add9"]                 )
@@ -219,6 +224,8 @@ testData =
   , ("C5"        , crd C      maj `with` ["5"]                    )
   , ("AMaj7"     , crd A      maj `with` ["Maj7"]                 )
   , ("GM9"       , crd G      maj `with` ["M9"]                   )
+  , ("Ab7#11"  , crd AFlat  maj `with` ["7", "#11"]           )
+  , ("Ab7(#11)"  , crd AFlat  maj `with` ["7", "(#11)"]           )
 
   -- These are strange - I think they're not indicating a bass note,
   --   they're just using slash as a separator between details.
@@ -227,7 +234,9 @@ testData =
   , ("A7/-9"     , crd A      maj `with` ["7", "/-9"]             )
   , ("Am7/+5"    , crd A      mnr `with` ["7", "/+5"]             )
   , ("Am7/-5"    , crd A      mnr `with` ["7", "/-5"]             )
-
+  , ("A7/5+"     , crd A      maj `with` ["7", "/5+"]             )
+  , ("F#m7/5-"   , crd FSharp mnr `with` ["7", "/5-"]             )
+  
   , ("A6/9"      , crd A      maj `with` ["6", "/9"]              ) -- quite different from A7/C#
   , ("Am7/6"     , crd A      mnr `with` ["7", "/6"]              )
   , ("Am7/9"     , crd A      mnr `with` ["7", "/9"]              )
@@ -252,15 +261,23 @@ testData =
   ] 
   where crd = initChord
 
+
+
+-- linesWeWouldLikeToParse = ["Intro: Fmaj7 - G13 G7 - Gm7 - C7-9 - Fmaj7  F#13"]
+
+
 unsupportedTestData ::  [(String, Chord Note)]
 unsupportedTestData = 
   [ ("Bb-7"      , crd BFlat  mnr `with` ["7"]                    ) -- the minus applies to the chord quality not the seventh.
   , ("Bb-/F"     , crd BFlat  mnr                      `on` F     )
   , ("A-Maj7"    , crd A      mnr `with` ["Maj7"]                 )
   , ("A-(Maj7)"  , crd A      mnr `with` ["Maj7"]                 ) -- parens
-  , ("A-(#5)"    , crd A      mnr `with` ["#5"]                   )
-  , ("E7(b9)"    , crd E      maj `with` ["7", "b9"]              )
+  , ("Dmaj9"     , crd D      maj `with` ["maj9"]                 ) 
+  , ("Dmaj9/C"   , crd D      maj `with` ["maj9"]      `on` C     ) 
+  , ("A-(#5)"    , crd A      mnr `with` ["(#5)"]                 )
+  , ("E7(b9)"    , crd E      maj `with` ["7", "(b9)"]            )
   , ("Cadd2*"    , crd C      maj `with` ["add2*"]                ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
+  , ("(D7b9)"    , crd D      maj `with` ["7", "b9"]              ) -- in parens - we won't restore them. is that problem?
   ]
   where crd = initChord
 
