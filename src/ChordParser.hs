@@ -1,6 +1,14 @@
 -- avoid: Warning: orphan instance: instance Eq ParseError
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
+
+-- Note that for the purposes of the chord transposer, a much simpler parser could look only for the form: 
+-- (something like...)
+-- literalNote anyStringButSlash "/" literalNote anyString -- (much being optional in reality)
+-- That way we need only to transpose the two literalNotes and just echo all other strings verbatim.
+--
+-- There's no need in that application to understand chord quality or to break apart the chord's listed extensions, etc.  That stuff *would* be needed for actually playing the chord.
+
 module ChordParser where
 
 -- import Debug.Trace
@@ -106,6 +114,7 @@ pDecoration =
     pSuspended :: Parser String
     pSuspended = try (string "sus2") <|> try (string "sus4") <|> string "sus"
 
+    pDimInterval :: Parser String
     pDimInterval = do
       d <- string "dim"
       i <- pInterval
@@ -208,7 +217,7 @@ testData =
   [ ("A"         , crd A      maj                                 )
   , ("A#7-9"     , crd ASharp maj `with` ["7","-9"]               )
   , ("A-9"       , crd A      mnr `with` ["9"]                    )
-  , ("A(-9)"     , crd A    maj `with` ["(-9)"]                   )
+  , ("A(-9)"     , crd A      maj `with` ["(-9)"]                 )
   , ("A7-9"      , crd A      maj `with` ["7", "-9"]              )
   , ("Aaug"      , crd A      aug                                 )
   , ("C+"        , crd C      aug                                 )
@@ -297,6 +306,7 @@ unsupportedTestData ::  [(String, Chord Note)]
 unsupportedTestData = 
   [ ("D7+"       , crd D      aug `with` ["7"]                    ) -- We want, but... ugh, this breaks the rule that chord quality be indicated before 7ths. And how will we recompose it?  As D+7 not D7+
   , ("D7+5"      , crd D      aug `with` ["7", "+5"]              )
+  , ("Am5-/7"    , crd A      mnr `with` ["5-", "/7"]             )
   , ("(D7b9)"    , crd D      maj `with` ["7", "b9"]              ) -- entire chord in parens.  And how do we restore the parens?
   , ("Cadd2*"    , crd C      maj `with` ["add2*"]                ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
   ]
