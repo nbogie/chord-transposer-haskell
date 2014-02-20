@@ -211,6 +211,7 @@ testData =
   , ("A(-9)"     , crd A    maj `with` ["(-9)"]                   )
   , ("A7-9"      , crd A      maj `with` ["7", "-9"]              )
   , ("Aaug"      , crd A      aug                                 )
+  , ("C+"        , crd C      aug                                 )
   , ("A9"        , crd A      maj `with` ["9"]                    )  
   , ("Bbm7"      , crd BFlat  mnr `with` ["7"]                    )
   , ("Ab"        , crd AFlat  maj                                 )
@@ -232,7 +233,6 @@ testData =
   , ("G7sus4/D"  , crd G      maj `with` ["7"] `sus` 4 `on` D     )
   , ("A#m7-5"    , crd ASharp mnr `with` ["7","-5"]               )
   , ("Am/C"      , crd A      mnr                      `on` C     )
-  , ("C+"        , crd C      aug                                 )
   , ("F7#5#9"    , crd F      maj `with` ["7", "#5", "#9"]        )
   , ("Cadd2"     , crd C      maj `with` ["add2"]                 )
   , ("Cadd9"     , crd C      maj `with` ["add9"]                 )
@@ -295,9 +295,8 @@ testData =
 
 unsupportedTestData ::  [(String, Chord Note)]
 unsupportedTestData = 
-  [ ("D7+"       , crd D      aug `with` ["7", "+"]               ) -- We want, but... ugh, this breaks the rule that chord quality be indicated before 7ths.
+  [ ("D7+"       , crd D      aug `with` ["7"]                    ) -- We want, but... ugh, this breaks the rule that chord quality be indicated before 7ths. And how will we recompose it?  As D+7 not D7+
   , ("D7+5"      , crd D      aug `with` ["7", "+5"]              )
-
   , ("(D7b9)"    , crd D      maj `with` ["7", "b9"]              ) -- entire chord in parens.  And how do we restore the parens?
   , ("Cadd2*"    , crd C      maj `with` ["add2*"]                ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
   ]
