@@ -63,7 +63,15 @@ pChord = do
   return $ Chord r bn c ds
 
 pMaybeParenthesisedDecoration :: Parser String
-pMaybeParenthesisedDecoration = try (between (string "(") (string ")")  pDecoration) <|> pDecoration
+pMaybeParenthesisedDecoration = 
+  try (betweenNotDiscarding (string "(") (string ")") pDecoration) <|> pDecoration
+
+betweenNotDiscarding pA pB pX = do
+  a <- pA
+  x <- pX
+  b <- pB
+  return $ a ++ x ++ b
+
 
 -- Ca.. could be Caug... or Cadd...
 -- Cm.. could be Cm... or Cmaj...
@@ -90,13 +98,10 @@ pDecoration =
        pInterval     <|> 
        pSuspended    <|>
        try (do; a <- string "add"; i <- pInterval; return (a ++ i) ) <|> 
-       -- TODO: just make this a generic pModifiedInterval
-       try (string "+5") <|> string "+9" <|> -- confusion with aug (C+) ?
-       try (string "-5") <|> string "-9" <|>
-       try (string "b5") <|> string "b9" <|>
-       try (string "#5") <|> string "#9" <|>
+       pModifiedInterval <|>
        try pSlashInterval <|>
        pDimInterval
+
   where
     -- sus is common, means sus4.
     pSuspended :: Parser String
@@ -117,6 +122,15 @@ pDecoration =
 
     pInterval  :: Parser String -- TODO: this should be between 1 and 15 ?
     pInterval = many1 digit
+    
+    -- e.g. -5 or b9 or #11
+    pModifiedInterval  :: Parser String 
+    pModifiedInterval = do
+      s       <- oneOf "+-#" 
+      ds      <- many1 digit -- TODO: this should be between 1 and 13 ?
+      return ( s : ds )
+      -- Can there be confusion betwen Gb+5 and aug (i.e. Gb+) ?
+
 
 
 pSlashBassNote :: Parser (Maybe Note)
@@ -216,7 +230,6 @@ testData =
   , ("A#m7-5"    , crd ASharp mnr `with` ["7","-5"]               )
   , ("Am/C"      , crd A      mnr                      `on` C     )
   , ("C+"        , crd C      aug                                 )
-  , ("D7+"       , crd D      maj `with` ["7", "+"]               )
   , ("F7#5#9"    , crd F      maj `with` ["7", "#5", "#9"]        )
   , ("Cadd2"     , crd C      maj `with` ["add2"]                 )
   , ("Cadd9"     , crd C      maj `with` ["add9"]                 )
@@ -270,6 +283,7 @@ unsupportedTestData ::  [(String, Chord Note)]
 unsupportedTestData = 
   [ ("Bb-7"      , crd BFlat  mnr `with` ["7"]                    ) -- the minus applies to the chord quality not the seventh.
   , ("Bb-/F"     , crd BFlat  mnr                      `on` F     )
+  , ("D7+"       , crd D      maj `with` ["7", "+"]               )
   , ("A-Maj7"    , crd A      mnr `with` ["Maj7"]                 )
   , ("A-(Maj7)"  , crd A      mnr `with` ["Maj7"]                 ) -- parens
   , ("Dmaj9"     , crd D      maj `with` ["maj9"]                 ) 
