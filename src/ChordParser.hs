@@ -307,6 +307,7 @@ unsupportedTestData =
   [ ("D7+"       , crd D      aug `with` ["7"]                    ) -- We want, but... ugh, this breaks the rule that chord quality be indicated before 7ths. And how will we recompose it?  As D+7 not D7+
   , ("D7+5"      , crd D      aug `with` ["7", "+5"]              )
   , ("Am5-/7"    , crd A      mnr `with` ["5-", "/7"]             )
+  , ("Cm(maj7,9)", crd C      mnr `with` ["M7", "9"]              )
   , ("(D7b9)"    , crd D      maj `with` ["7", "b9"]              ) -- entire chord in parens.  And how do we restore the parens?
   , ("Cadd2*"    , crd C      maj `with` ["add2*"]                ) -- asterisk seen marking "unusual chords" - should we preserve unknowns?
   ]
