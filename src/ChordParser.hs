@@ -13,7 +13,6 @@ module ChordParser where
 
 -- import Debug.Trace
 import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Error(errorMessages)
 
 
 import Test.HUnit
@@ -168,9 +167,6 @@ pNote = do
     "G#" -> GSharp
     other -> error $ "BUG: pNote: unrecognised reformed note " ++ other
 
-
-instance Eq ParseError where
-  a == b = errorMessages a == errorMessages b
 
 testPQuality ::  Test
 testPQuality = TestList 
